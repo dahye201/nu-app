@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>nu.</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --text: #F5F5F5;
+      --muted: #8E8E93;
+      --placeholder: #48484A;
+      --separator: #2C2C2E;
+      --accent: #FF453A;
+      --emoji-hover: rgba(255, 255, 255, 0.07);
+      --emoji-selected: rgba(255, 255, 255, 0.11);
+      --toggle-bg: rgba(255, 255, 255, 0.06);
+    }
+
+    [data-theme="light"] {
+      --bg: #F2F2F7;
+      --text: #1C1C1E;
+      --muted: #6C6C70;
+      --placeholder: #AEAEB2;
+      --separator: #D1D1D6;
+      --accent: #FF3B30;
+      --emoji-hover: rgba(0, 0, 0, 0.05);
+      --emoji-selected: rgba(0, 0, 0, 0.09);
+      --toggle-bg: rgba(0, 0, 0, 0.05);
+    }
+
+    [data-theme="sepia"] {
+      --bg: #F4ECD8;
+      --text: #4A3B2A;
+      --muted: #8A7860;
+      --placeholder: #C4B394;
+      --separator: #E0D2B4;
+      --accent: #B5651D;
+      --emoji-hover: rgba(74, 59, 42, 0.06);
+      --emoji-selected: rgba(74, 59, 42, 0.1);
+      --toggle-bg: rgba(74, 59, 42, 0.06);
+    }
+
+    [data-theme="mint"] {
+      --bg: #0E1F1B;
+      --text: #E8F5F0;
+      --muted: #7FA396;
+      --placeholder: #3D5750;
+      --separator: #1E3831;
+      --accent: #34D399;
+      --emoji-hover: rgba(255, 255, 255, 0.06);
+      --emoji-selected: rgba(255, 255, 255, 0.1);
+      --toggle-bg: rgba(255, 255, 255, 0.05);
+    }
+
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      height: 100%;
+    }
+
+    body {
+      min-height: 100%;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      transition: background-color 0.25s ease, color 0.25s ease;
+      -webkit-font-smoothing: antialiased;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* ── Top-right button row ── */
+    .theme-toggle {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 100;
+      background: var(--toggle-bg);
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      transition: background 0.2s;
+    }
+
+    .theme-toggle:hover {
+      background: var(--emoji-selected);
+    }
+
+    .history-btn {
+      position: fixed;
+      top: 24px;
+      right: 68px;
+      z-index: 100;
+      background: var(--toggle-bg);
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      transition: background 0.2s;
+    }
+
+    .history-btn:hover {
+      background: var(--emoji-selected);
+    }
+
+    /* ── Main container ── */
+    .container {
+      width: 100%;
+      max-width: 450px;
+      padding: 52px 28px 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 28px;
+    }
+
+    .day-block {
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+    }
+
+    .day-text {
+      font-size: 60px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -2.5px;
+      color: var(--text);
+    }
+
+    .day-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background-color: var(--accent);
+      flex-shrink: 0;
+      margin-bottom: 6px;
+    }
+
+    .date-block {
+      text-align: right;
+      color: var(--muted);
+      line-height: 1.45;
+      font-weight: 400;
+      padding-top: 8px;
+    }
+
+    .date-month {
+      font-size: 13px;
+      display: block;
+    }
+
+    .date-clock {
+      font-size: 26px;
+      font-weight: 300;
+      letter-spacing: -0.5px;
+      display: block;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    }
+
+    /* ── Input area ── */
+    .input-section {
+      margin-bottom: 4px;
+    }
+
+    textarea {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      color: var(--text);
+      font-size: 21px;
+      font-family: inherit;
+      font-weight: 400;
+      line-height: 1.45;
+      min-height: 60px;
+      max-height: 200px;
+      overflow-y: auto;
+      caret-color: var(--accent);
+    }
+
+    textarea::placeholder {
+      color: var(--placeholder);
+    }
+
+    .input-footer {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 2px;
+      margin-top: 10px;
+    }
+
+    .emoji-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 5px 7px;
+      border-radius: 8px;
+      opacity: 0.35;
+      transition: opacity 0.15s, background 0.15s;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+    }
+
+    .emoji-btn:hover {
+      opacity: 0.7;
+      background: var(--emoji-hover);
+    }
+
+    .emoji-btn.selected {
+      opacity: 1;
+      background: var(--emoji-selected);
+    }
+
+    /* ── Separator ── */
+    .divider {
+      border: none;
+      border-top: 1px dotted var(--separator);
+      margin: 16px 0 0;
+    }
+
+    /* ── Timeline ── */
+    .timeline {
+      padding-top: 0;
+    }
+
+    .log-entry {
+      display: flex;
+      align-items: flex-start;
+      padding: 15px 0;
+      gap: 14px;
+    }
+
+    .log-time {
+      font-size: 13px;
+      color: var(--muted);
+      font-family: 'SF Mono', ui-monospace, 'Fira Code', 'Courier New', monospace;
+      flex-shrink: 0;
+      padding-top: 3px;
+      letter-spacing: 0.03em;
+      min-width: 38px;
+    }
+
+    .log-text {
+      font-size: 16px;
+      line-height: 1.55;
+      color: var(--text);
+      word-break: break-word;
+      white-space: pre-wrap;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .log-mood {
+      font-size: 17px;
+      line-height: 1.5;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .log-divider {
+      border: none;
+      border-top: 1px dotted var(--separator);
+    }
+
+    .empty-hint {
+      color: var(--placeholder);
+      font-size: 14px;
+      text-align: center;
+      padding: 40px 0 20px;
+      letter-spacing: 0.01em;
+    }
+
+    /* ── More emoji picker ── */
+    .emoji-picker-wrap {
+      position: relative;
+    }
+
+    .more-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      color: var(--muted);
+      opacity: 0.5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.15s, background 0.15s;
+      font-weight: 500;
+    }
+
+    .more-btn:hover {
+      opacity: 1;
+      background: var(--emoji-hover);
+    }
+
+    .more-btn.open {
+      opacity: 1;
+      background: var(--emoji-selected);
+    }
+
+    .emoji-panel {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      right: 0;
+      background: var(--bg);
+      border: 1px solid var(--separator);
+      border-radius: 14px;
+      padding: 10px;
+      z-index: 50;
+      width: 196px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    }
+
+    [data-theme="light"] .emoji-panel,
+    [data-theme="sepia"] .emoji-panel {
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+
+    .emoji-panel.visible {
+      display: block;
+    }
+
+    .emoji-panel-label {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 2px 4px 6px;
+    }
+
+    .emoji-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2px;
+    }
+
+    .emoji-grid button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 22px;
+      padding: 7px 4px;
+      border-radius: 8px;
+      line-height: 1;
+      transition: background 0.12s;
+    }
+
+    .emoji-grid button:hover {
+      background: var(--emoji-hover);
+    }
+
+    .emoji-grid button.selected {
+      background: var(--emoji-selected);
+    }
+
+    /* ── Premium button ── */
+    .premium-btn {
+      position: fixed;
+      top: 24px;
+      right: 112px;
+      z-index: 100;
+      background: var(--toggle-bg);
+      border: none;
+      border-radius: 20px;
+      height: 36px;
+      padding: 0 12px 0 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-family: inherit;
+      color: var(--muted);
+      letter-spacing: 0.01em;
+      transition: background 0.2s, color 0.2s;
+      white-space: nowrap;
+    }
+
+    .premium-btn:hover {
+      background: var(--emoji-selected);
+      color: var(--text);
+    }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .modal-overlay.visible {
+      display: flex;
+    }
+
+    .modal {
+      background: #1A1A1A;
+      border: 1px solid #2C2C2E;
+      border-radius: 22px;
+      padding: 36px 32px 28px;
+      width: 100%;
+      max-width: 340px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+    }
+
+    [data-theme="light"] .modal,
+    [data-theme="sepia"] .modal {
+      background: #FFFFFF;
+      border-color: #E5E5EA;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.14);
+    }
+
+    .modal-brand {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text);
+      margin-bottom: 20px;
+      line-height: 1;
+    }
+
+    .modal-price-line {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .modal-price-line strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .modal-features {
+      list-style: none;
+      margin-bottom: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .modal-features li {
+      font-size: 14px;
+      color: var(--muted);
+      padding-left: 16px;
+      position: relative;
+      line-height: 1.5;
+    }
+
+    .modal-features li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .modal-cta {
+      background: var(--text);
+      color: var(--bg);
+      border: none;
+      border-radius: 12px;
+      padding: 13px 0;
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: opacity 0.2s;
+    }
+
+    .modal-cta:hover { opacity: 0.85; }
+
+    .modal-cta:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .modal-secondary {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      padding: 8px 0;
+      width: 100%;
+      transition: color 0.15s;
+    }
+
+    .modal-secondary:hover { color: var(--text); }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      padding: 8px 0;
+      width: 100%;
+      transition: color 0.15s;
+    }
+
+    .modal-close:hover { color: var(--text); }
+
+    /* ── Theme picker (inside premium modal, once unlocked) ── */
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .theme-swatch {
+      border: 2px solid var(--separator);
+      border-radius: 12px;
+      height: 44px;
+      cursor: pointer;
+      padding: 0;
+      transition: border-color 0.15s;
+    }
+
+    .theme-swatch.selected {
+      border-color: var(--accent);
+    }
+
+    .theme-swatch[data-swatch="dark"] { background: #121212; }
+    .theme-swatch[data-swatch="light"] { background: #F2F2F7; }
+    .theme-swatch[data-swatch="sepia"] { background: #F4ECD8; }
+    .theme-swatch[data-swatch="mint"] { background: #0E1F1B; }
+
+    /* ── Recap section ── */
+    .recap {
+      margin-top: 36px;
+      padding-top: 20px;
+      border-top: 1px dotted var(--separator);
+    }
+
+    .copy-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 13px;
+      font-family: inherit;
+      font-weight: 400;
+      padding: 0;
+      text-decoration: none;
+      transition: color 0.15s, text-decoration 0.15s;
+      text-align: left;
+    }
+
+    .copy-btn:hover {
+      color: var(--text);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-color: var(--muted);
+    }
+
+    .copy-btn.copied {
+      color: var(--text);
+    }
+
+    /* ── Show older logs button ── */
+    .show-older-btn {
+      display: block;
+      width: 100%;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--placeholder);
+      font-size: 13px;
+      font-family: inherit;
+      font-weight: 400;
+      padding: 14px 0;
+      text-align: left;
+      transition: color 0.15s;
+      letter-spacing: 0.01em;
+    }
+
+    .show-older-btn:hover {
+      color: var(--muted);
+    }
+
+    /* ── Archive (history) modal ── */
+    .archive-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .archive-day-btn {
+      background: none;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: left;
+      padding: 12px 10px;
+      font-size: 14px;
+      color: var(--text);
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+
+    .archive-day-btn:hover {
+      background: var(--emoji-hover);
+    }
+
+    .archive-day-btn .archive-count {
+      color: var(--muted);
+      font-size: 12px;
+      margin-left: 6px;
+    }
+
+    .archive-empty {
+      color: var(--placeholder);
+      font-size: 13px;
+      padding: 12px 0 20px;
+    }
+
+    .archive-back-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      padding: 0 0 16px;
+      transition: color 0.15s;
+    }
+
+    .archive-back-btn:hover { color: var(--text); }
+
+    /* Scrollbar */
+    textarea::-webkit-scrollbar { width: 0; }
+  </style>
+</head>
+<body>
+
+  <button class="theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle dark/light mode">
+    ☀️
+  </button>
+  <button class="history-btn" id="historyBtn" aria-label="Past days" title="History">📅</button>
+  <button class="premium-btn" id="premiumBtn" aria-label="Premium features">🔒 Themes</button>
+
+  <!-- Premium Modal -->
+  <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-label="nu. Premium">
+    <div class="modal">
+      <div class="modal-brand">nu. Premium 🔒</div>
+
+      <!-- Locked state: purchase CTA -->
+      <div id="premiumLocked">
+        <div class="modal-price-line" id="modalPriceLine">
+          One-time purchase for lifetime access &nbsp;<strong id="modalPrice">…</strong>
+        </div>
+        <ul class="modal-features">
+          <li>Archive and view past logs with history view.</li>
+          <li>Unlock premium minimalist themes.</li>
+        </ul>
+        <div class="modal-actions">
+          <button class="modal-cta" id="unlockBtn">Unlock Premium</button>
+          <button class="modal-secondary" id="restoreBtn">Restore Purchases</button>
+          <button class="modal-close" id="closeModalBtn">Close</button>
+        </div>
+      </div>
+
+      <!-- Unlocked state: theme picker -->
+      <div id="premiumUnlocked" style="display:none">
+        <div class="modal-price-line">Premium unlocked. Pick a theme:</div>
+        <div class="theme-grid" id="themeGrid">
+          <button class="theme-swatch" data-swatch="dark" aria-label="Dark theme"></button>
+          <button class="theme-swatch" data-swatch="light" aria-label="Light theme"></button>
+          <button class="theme-swatch" data-swatch="sepia" aria-label="Sepia theme"></button>
+          <button class="theme-swatch" data-swatch="mint" aria-label="Mint theme"></button>
+        </div>
+        <div class="modal-actions">
+          <button class="modal-close" id="closeModalBtn2">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Archive Modal -->
+  <div class="modal-overlay" id="archiveOverlay" role="dialog" aria-modal="true" aria-label="nu. History">
+    <div class="modal">
+      <div class="modal-brand">History</div>
+
+      <div id="archiveLocked">
+        <div class="modal-price-line">Viewing past days is a premium feature.</div>
+        <div class="modal-actions">
+          <button class="modal-cta" id="archiveUnlockBtn">Unlock Premium</button>
+          <button class="modal-close" id="closeArchiveBtn">Close</button>
+        </div>
+      </div>
+
+      <div id="archiveUnlocked" style="display:none">
+        <div id="archiveDayList"></div>
+        <div class="modal-actions">
+          <button class="modal-close" id="closeArchiveBtn2">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="day-block">
+        <span class="day-text">nu</span>
+        <span class="day-dot"></span>
+      </div>
+      <div class="date-block" id="dateText"></div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-section">
+      <textarea
+        id="journalInput"
+        placeholder="What did you just finish? What is the next tiny step?"
+        rows="3"
+        spellcheck="true"
+        autocomplete="off"
+      ></textarea>
+      <div class="input-footer">
+        <button class="emoji-btn" data-emoji="🙂" aria-label="Good">🙂</button>
+        <button class="emoji-btn" data-emoji="😐" aria-label="Neutral">😐</button>
+        <button class="emoji-btn" data-emoji="😫" aria-label="Tired">😫</button>
+        <div class="emoji-picker-wrap">
+          <button class="more-btn" id="moreBtn" aria-label="More emojis" title="More emojis">+</button>
+          <div class="emoji-panel" id="emojiPanel" role="dialog" aria-label="Emoji picker">
+            <div class="emoji-grid" id="emojiGrid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Timeline -->
+    <div class="timeline" id="timeline" role="list" aria-label="Journal entries"></div>
+
+    <!-- Recap -->
+    <div class="recap" id="recap" style="display:none">
+      <button class="copy-btn" id="copyBtn">Copy today's log</button>
+    </div>
+  </div>
+
+  <script src="bundle.js"></script>
+</body>
+</html>
