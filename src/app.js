@@ -3,7 +3,7 @@ import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import {
   initPurchases,
-  getPremiumPackage,
+  getPremiumProduct,
   purchasePremium,
   restorePurchases,
 } from './purchaseService.js';
@@ -14,7 +14,7 @@ const MONTHS = ['January','February','March','April','May','June',
 
 let selectedEmoji = null;
 let isPremium = false;
-let premiumPackage = null;
+let premiumProduct = null;
 
 const input       = document.getElementById('journalInput');
 const timeline    = document.getElementById('timeline');
@@ -325,10 +325,10 @@ modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) clo
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePremiumModal(); });
 
 unlockBtn.addEventListener('click', async () => {
-  if (!premiumPackage) return;
+  if (!premiumProduct) return;
   unlockBtn.disabled = true;
   unlockBtn.textContent = 'Processing…';
-  const result = await purchasePremium(premiumPackage);
+  const result = await purchasePremium(premiumProduct);
   unlockBtn.disabled = false;
   unlockBtn.textContent = 'Unlock Premium';
   if (result === 'success') {
@@ -350,10 +350,10 @@ restoreBtn.addEventListener('click', async () => {
   }
 });
 
-async function loadPremiumPackage() {
-  premiumPackage = await getPremiumPackage();
-  modalPrice.textContent = premiumPackage?.product?.priceString ?? 'unavailable';
-  unlockBtn.disabled = !premiumPackage;
+async function loadPremiumProduct() {
+  premiumProduct = await getPremiumProduct();
+  modalPrice.textContent = premiumProduct?.priceString ?? 'unavailable';
+  unlockBtn.disabled = !premiumProduct;
 }
 
 /* ── Theme picker (premium) ── */
@@ -470,7 +470,7 @@ function onPremiumChange(premium) {
 }
 
 initPurchases(onPremiumChange);
-loadPremiumPackage();
+loadPremiumProduct();
 
 /* ── Boot ── */
 const savedTheme = localStorage.getItem('ij_theme');

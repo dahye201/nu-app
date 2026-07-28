@@ -3,6 +3,7 @@ import { Purchases, LOG_LEVEL, PURCHASES_ERROR_CODE } from '@revenuecat/purchase
 import { REVENUECAT_IOS_API_KEY } from './config.js';
 
 export const PREMIUM_ENTITLEMENT_ID = 'premium';
+export const PREMIUM_PRODUCT_ID = 'nu.premium.lifetime';
 
 let initialized = false;
 
@@ -26,20 +27,24 @@ export function initPurchases(onPremiumChange) {
     .catch(() => {});
 }
 
-/** The premium lifetime-unlock package from the current offering, or null if unavailable. */
-export async function getPremiumPackage() {
+/**
+ * The premium lifetime-unlock StoreKit product, or null if unavailable.
+ * Fetched directly by product ID rather than via an Offering/Package, since
+ * this app only ever sells the one product and doesn't need paywall variants.
+ */
+export async function getPremiumProduct() {
   if (!Capacitor.isNativePlatform() || !REVENUECAT_IOS_API_KEY) return null;
   try {
-    const offerings = await Purchases.getOfferings();
-    return offerings.current?.lifetime ?? offerings.current?.availablePackages[0] ?? null;
+    const { products } = await Purchases.getProducts({ productIdentifiers: [PREMIUM_PRODUCT_ID] });
+    return products[0] ?? null;
   } catch {
     return null;
   }
 }
 
-export async function purchasePremium(pkg) {
+export async function purchasePremium(product) {
   try {
-    const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg });
+    const { customerInfo } = await Purchases.purchaseStoreProduct({ product });
     return isEntitled(customerInfo) ? 'success' : 'error';
   } catch (err) {
     return err?.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR ? 'cancelled' : 'error';
