@@ -81,7 +81,7 @@
     /* ── Top-right button row ── */
     .theme-toggle {
       position: fixed;
-      top: 24px;
+      top: calc(env(safe-area-inset-top) + 16px);
       right: 24px;
       z-index: 100;
       background: var(--toggle-bg);
@@ -103,7 +103,7 @@
 
     .history-btn {
       position: fixed;
-      top: 24px;
+      top: calc(env(safe-area-inset-top) + 16px);
       right: 68px;
       z-index: 100;
       background: var(--toggle-bg);
@@ -393,7 +393,7 @@
     /* ── Premium button ── */
     .premium-btn {
       position: fixed;
-      top: 24px;
+      top: calc(env(safe-area-inset-top) + 16px);
       right: 112px;
       z-index: 100;
       background: var(--toggle-bg);
