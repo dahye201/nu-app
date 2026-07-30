@@ -14,9 +14,11 @@
       --placeholder: #48484A;
       --separator: #2C2C2E;
       --accent: #FF453A;
+      --accent2: #FF453A;
       --emoji-hover: rgba(255, 255, 255, 0.07);
       --emoji-selected: rgba(255, 255, 255, 0.11);
       --toggle-bg: rgba(255, 255, 255, 0.06);
+      --font-override: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, Arial, sans-serif;
     }
 
     [data-theme="light"] {
@@ -26,33 +28,67 @@
       --placeholder: #AEAEB2;
       --separator: #D1D1D6;
       --accent: #FF3B30;
+      --accent2: #FF3B30;
       --emoji-hover: rgba(0, 0, 0, 0.05);
       --emoji-selected: rgba(0, 0, 0, 0.09);
       --toggle-bg: rgba(0, 0, 0, 0.05);
+      --font-override: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, Arial, sans-serif;
     }
 
-    [data-theme="sepia"] {
-      --bg: #F4ECD8;
-      --text: #4A3B2A;
-      --muted: #8A7860;
-      --placeholder: #C4B394;
-      --separator: #E0D2B4;
-      --accent: #B5651D;
-      --emoji-hover: rgba(74, 59, 42, 0.06);
-      --emoji-selected: rgba(74, 59, 42, 0.1);
-      --toggle-bg: rgba(74, 59, 42, 0.06);
+    [data-theme="cyberpunk"] {
+      --bg: #0D0221;
+      --text: #F5F0FF;
+      --muted: #9D7FC9;
+      --placeholder: #4A2E7A;
+      --separator: #2E1155;
+      --accent: #FF2ED1;
+      --accent2: #00F0FF;
+      --emoji-hover: rgba(255, 46, 209, 0.1);
+      --emoji-selected: rgba(0, 240, 255, 0.15);
+      --toggle-bg: rgba(255, 46, 209, 0.08);
+      --font-override: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, Arial, sans-serif;
     }
 
-    [data-theme="mint"] {
-      --bg: #0E1F1B;
-      --text: #E8F5F0;
-      --muted: #7FA396;
-      --placeholder: #3D5750;
-      --separator: #1E3831;
-      --accent: #34D399;
-      --emoji-hover: rgba(255, 255, 255, 0.06);
-      --emoji-selected: rgba(255, 255, 255, 0.1);
-      --toggle-bg: rgba(255, 255, 255, 0.05);
+    [data-theme="neon"] {
+      --bg: #0A0A0A;
+      --text: #EFFFEF;
+      --muted: #5FBF6B;
+      --placeholder: #1F4023;
+      --separator: #1A2E1C;
+      --accent: #FF10F0;
+      --accent2: #39FF14;
+      --emoji-hover: rgba(57, 255, 20, 0.08);
+      --emoji-selected: rgba(255, 16, 240, 0.15);
+      --toggle-bg: rgba(57, 255, 20, 0.07);
+      --font-override: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, Arial, sans-serif;
+    }
+
+    [data-theme="retro"] {
+      --bg: #0C1A0C;
+      --text: #4CFF4C;
+      --muted: #2E8F2E;
+      --placeholder: #1E5E1E;
+      --separator: #1F4A1F;
+      --accent: #FFB000;
+      --accent2: #4CFF4C;
+      --emoji-hover: rgba(76, 255, 76, 0.08);
+      --emoji-selected: rgba(255, 176, 0, 0.15);
+      --toggle-bg: rgba(76, 255, 76, 0.07);
+      --font-override: 'SF Mono', ui-monospace, 'Courier New', monospace;
+    }
+
+    [data-theme="deepblue"] {
+      --bg: #0A1128;
+      --text: #E8ECFB;
+      --muted: #7C8DBF;
+      --placeholder: #2B3868;
+      --separator: #1B274D;
+      --accent: #4361EE;
+      --accent2: #4CC9F0;
+      --emoji-hover: rgba(67, 97, 238, 0.12);
+      --emoji-selected: rgba(76, 201, 240, 0.15);
+      --toggle-bg: rgba(67, 97, 238, 0.08);
+      --font-override: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, Arial, sans-serif;
     }
 
     *, *::before, *::after {
@@ -69,7 +105,7 @@
       min-height: 100%;
       background-color: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, Arial, sans-serif;
+      font-family: var(--font-override);
       display: flex;
       justify-content: center;
       transition: background-color 0.25s ease, color 0.25s ease;
@@ -79,32 +115,10 @@
     }
 
     /* ── Top-right button row ── */
-    .theme-toggle {
-      position: fixed;
-      top: calc(env(safe-area-inset-top) + 16px);
-      right: 24px;
-      z-index: 100;
-      background: var(--toggle-bg);
-      border: none;
-      border-radius: 50%;
-      width: 36px;
-      height: 36px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 15px;
-      transition: background 0.2s;
-    }
-
-    .theme-toggle:hover {
-      background: var(--emoji-selected);
-    }
-
+    .theme-toggle,
     .history-btn {
       position: fixed;
       top: calc(env(safe-area-inset-top) + 16px);
-      right: 68px;
       z-index: 100;
       background: var(--toggle-bg);
       border: none;
@@ -115,12 +129,25 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 15px;
-      transition: background 0.2s;
+      color: var(--muted);
+      transition: background 0.2s, color 0.2s;
     }
 
+    .theme-toggle { right: 24px; }
+    .history-btn { right: 68px; }
+
+    .theme-toggle:hover,
     .history-btn:hover {
       background: var(--emoji-selected);
+      color: var(--text);
+    }
+
+    .theme-toggle svg,
+    .history-btn svg,
+    .premium-btn svg {
+      width: 18px;
+      height: 18px;
+      display: block;
     }
 
     /* ── Main container ── */
@@ -159,7 +186,7 @@
       width: 9px;
       height: 9px;
       border-radius: 50%;
-      background-color: var(--accent);
+      background-color: var(--accent2);
       flex-shrink: 0;
       margin-bottom: 6px;
     }
@@ -294,6 +321,14 @@
       border-top: 1px dotted var(--separator);
     }
 
+    #archiveDayList .log-entry {
+      padding: 8px 0;
+    }
+
+    #archiveDayList .log-entry + .log-entry {
+      border-top: 1px dotted var(--separator);
+    }
+
     .empty-hint {
       color: var(--placeholder);
       font-size: 14px;
@@ -348,8 +383,7 @@
       box-shadow: 0 8px 32px rgba(0,0,0,0.35);
     }
 
-    [data-theme="light"] .emoji-panel,
-    [data-theme="sepia"] .emoji-panel {
+    [data-theme="light"] .emoji-panel {
       box-shadow: 0 8px 24px rgba(0,0,0,0.12);
     }
 
@@ -448,8 +482,7 @@
       box-shadow: 0 24px 64px rgba(0,0,0,0.6);
     }
 
-    [data-theme="light"] .modal,
-    [data-theme="sepia"] .modal {
+    [data-theme="light"] .modal {
       background: #FFFFFF;
       border-color: #E5E5EA;
       box-shadow: 0 16px 48px rgba(0,0,0,0.14);
@@ -557,28 +590,58 @@
     /* ── Theme picker (inside premium modal, once unlocked) ── */
     .theme-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 10px;
-      margin-bottom: 24px;
+      margin-bottom: 8px;
     }
 
     .theme-swatch {
       border: 2px solid var(--separator);
       border-radius: 12px;
-      height: 44px;
+      height: 52px;
       cursor: pointer;
       padding: 0;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, transform 0.1s;
+      position: relative;
+      overflow: hidden;
     }
+
+    .theme-swatch:active { transform: scale(0.96); }
 
     .theme-swatch.selected {
       border-color: var(--accent);
     }
 
+    .theme-swatch .swatch-label {
+      position: absolute;
+      bottom: 3px;
+      left: 0;
+      right: 0;
+      font-size: 9px;
+      letter-spacing: 0.02em;
+      text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
     .theme-swatch[data-swatch="dark"] { background: #121212; }
+    .theme-swatch[data-swatch="dark"] .swatch-label { color: #8E8E93; }
     .theme-swatch[data-swatch="light"] { background: #F2F2F7; }
-    .theme-swatch[data-swatch="sepia"] { background: #F4ECD8; }
-    .theme-swatch[data-swatch="mint"] { background: #0E1F1B; }
+    .theme-swatch[data-swatch="light"] .swatch-label { color: #6C6C70; }
+    .theme-swatch[data-swatch="cyberpunk"] { background: linear-gradient(135deg, #0D0221 55%, #FF2ED1 55%, #00F0FF 100%); }
+    .theme-swatch[data-swatch="cyberpunk"] .swatch-label { color: #F5F0FF; }
+    .theme-swatch[data-swatch="neon"] { background: linear-gradient(135deg, #0A0A0A 55%, #39FF14 55%, #FF10F0 100%); }
+    .theme-swatch[data-swatch="neon"] .swatch-label { color: #EFFFEF; }
+    .theme-swatch[data-swatch="retro"] { background: linear-gradient(135deg, #0C1A0C 55%, #4CFF4C 55%, #FFB000 100%); }
+    .theme-swatch[data-swatch="retro"] .swatch-label { color: #4CFF4C; font-family: 'SF Mono', ui-monospace, monospace; }
+    .theme-swatch[data-swatch="deepblue"] { background: linear-gradient(135deg, #0A1128 55%, #4361EE 55%, #4CC9F0 100%); }
+    .theme-swatch[data-swatch="deepblue"] .swatch-label { color: #E8ECFB; }
+
+    .theme-locked-hint {
+      font-size: 11px;
+      color: var(--placeholder);
+      text-align: center;
+      margin-bottom: 20px;
+    }
 
     /* ── Recap section ── */
     .recap {
@@ -633,13 +696,94 @@
       color: var(--muted);
     }
 
-    /* ── Archive (history) modal ── */
-    .archive-list {
-      list-style: none;
+    /* ── Archive (history) calendar ── */
+    .cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .cal-nav-btn {
+      background: var(--toggle-bg);
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      font-size: 15px;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+
+    .cal-nav-btn:hover { background: var(--emoji-selected); }
+    .cal-nav-btn:disabled { opacity: 0.3; cursor: default; }
+
+    .cal-month-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      margin-bottom: 4px;
+    }
+
+    .cal-weekdays span {
+      text-align: center;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+      margin-bottom: 16px;
+    }
+
+    .cal-day {
+      background: none;
+      border: none;
+      border-radius: 9px;
+      aspect-ratio: 1;
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      margin-bottom: 8px;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--text);
+      font-family: inherit;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.15s;
+    }
+
+    .cal-day:hover:not(:disabled) { background: var(--emoji-hover); }
+    .cal-day:disabled { color: var(--placeholder); cursor: default; opacity: 0.35; }
+
+    .cal-day .cal-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-top: 2px;
+    }
+
+    .cal-day.today {
+      box-shadow: inset 0 0 0 1.5px var(--muted);
+    }
+
+    .cal-day.selected {
+      background: var(--emoji-selected);
+      color: var(--accent2);
+      font-weight: 700;
     }
 
     .archive-day-btn {
@@ -690,11 +834,16 @@
 </head>
 <body>
 
-  <button class="theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle dark/light mode">
-    ☀️
+  <button class="theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle dark/light mode"></button>
+  <button class="history-btn" id="historyBtn" aria-label="Past days" title="History">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="14" height="13" rx="2.5"/>
+      <line x1="3" y1="8" x2="17" y2="8"/>
+      <line x1="7" y1="2" x2="7" y2="5"/>
+      <line x1="13" y1="2" x2="13" y2="5"/>
+    </svg>
   </button>
-  <button class="history-btn" id="historyBtn" aria-label="Past days" title="History">📅</button>
-  <button class="premium-btn" id="premiumBtn" aria-label="Premium features">🔒 Themes</button>
+  <button class="premium-btn" id="premiumBtn" aria-label="Premium features"></button>
 
   <!-- Premium Modal -->
   <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-label="nu. Premium">
@@ -721,10 +870,12 @@
       <div id="premiumUnlocked" style="display:none">
         <div class="modal-price-line">Premium unlocked. Pick a theme:</div>
         <div class="theme-grid" id="themeGrid">
-          <button class="theme-swatch" data-swatch="dark" aria-label="Dark theme"></button>
-          <button class="theme-swatch" data-swatch="light" aria-label="Light theme"></button>
-          <button class="theme-swatch" data-swatch="sepia" aria-label="Sepia theme"></button>
-          <button class="theme-swatch" data-swatch="mint" aria-label="Mint theme"></button>
+          <button class="theme-swatch" data-swatch="dark" aria-label="Dark theme"><span class="swatch-label">Dark</span></button>
+          <button class="theme-swatch" data-swatch="light" aria-label="Light theme"><span class="swatch-label">Light</span></button>
+          <button class="theme-swatch" data-swatch="cyberpunk" aria-label="Cyberpunk theme"><span class="swatch-label">Cyberpunk</span></button>
+          <button class="theme-swatch" data-swatch="neon" aria-label="Neon theme"><span class="swatch-label">Neon</span></button>
+          <button class="theme-swatch" data-swatch="retro" aria-label="Retro theme"><span class="swatch-label">Retro</span></button>
+          <button class="theme-swatch" data-swatch="deepblue" aria-label="Deep Blue theme"><span class="swatch-label">Deep Blue</span></button>
         </div>
         <div class="modal-actions">
           <button class="modal-close" id="closeModalBtn2">Close</button>
@@ -747,6 +898,17 @@
       </div>
 
       <div id="archiveUnlocked" style="display:none">
+        <div id="calView">
+          <div class="cal-header">
+            <button class="cal-nav-btn" id="calPrevBtn" aria-label="Previous month">‹</button>
+            <div class="cal-month-label" id="calMonthLabel"></div>
+            <button class="cal-nav-btn" id="calNextBtn" aria-label="Next month">›</button>
+          </div>
+          <div class="cal-weekdays">
+            <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+        </div>
         <div id="archiveDayList"></div>
         <div class="modal-actions">
           <button class="modal-close" id="closeArchiveBtn2">Close</button>

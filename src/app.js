@@ -12,6 +12,27 @@ const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTHS = ['January','February','March','April','May','June',
                 'July','August','September','October','November','December'];
 
+const ICON_SUN = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+  <circle cx="10" cy="10" r="4"/>
+  <line x1="10" y1="1.5" x2="10" y2="3.5"/><line x1="10" y1="16.5" x2="10" y2="18.5"/>
+  <line x1="1.5" y1="10" x2="3.5" y2="10"/><line x1="16.5" y1="10" x2="18.5" y2="10"/>
+  <line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="14.4" y1="14.4" x2="15.8" y2="15.8"/>
+  <line x1="4.2" y1="15.8" x2="5.6" y2="14.4"/><line x1="14.4" y1="5.6" x2="15.8" y2="4.2"/>
+</svg>`;
+
+const ICON_MOON = `<svg viewBox="0 0 20 20" fill="currentColor">
+  <path d="M14.5 11.5A6 6 0 0 1 8.5 5.5a6 6 0 1 0 6 6z"/>
+</svg>`;
+
+const ICON_LOCK = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="4.5" y="9" width="11" height="8" rx="2"/>
+  <path d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9"/>
+</svg>`;
+
+const ICON_SPARKLE = `<svg viewBox="0 0 20 20" fill="currentColor">
+  <path d="M10 2l1.6 5.2L17 9l-5.4 1.8L10 16l-1.6-5.2L3 9l5.4-1.8z"/>
+</svg>`;
+
 let selectedEmoji = null;
 let isPremium = false;
 let premiumProduct = null;
@@ -54,8 +75,6 @@ function nowHHMM() {
 }
 
 /* ── Storage ── */
-const ENTRY_KEY_RE = /^ij_(\d+)_(\d+)_(\d+)$/;
-
 function dayKey(d) {
   return `ij_${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`;
 }
@@ -75,22 +94,6 @@ function loadEntries() {
 
 function saveEntries(entries) {
   localStorage.setItem(todayKey(), JSON.stringify(entries));
-}
-
-/** All past days that have entries, newest first (excludes today). */
-function listArchiveDays() {
-  const todaysKey = todayKey();
-  const days = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    const match = key && key.match(ENTRY_KEY_RE);
-    if (!match || key === todaysKey) continue;
-    const [, y, m, d] = match;
-    const date = new Date(Number(y), Number(m) - 1, Number(d));
-    const entries = loadEntriesForKey(key);
-    if (entries.length) days.push({ key, date, count: entries.length });
-  }
-  return days.sort((a, b) => b.date - a.date);
 }
 
 /* ── Render ── */
@@ -304,7 +307,7 @@ const modalPrice      = document.getElementById('modalPrice');
 function refreshPremiumModalState() {
   premiumLocked.style.display = isPremium ? 'none' : 'block';
   premiumUnlocked.style.display = isPremium ? 'block' : 'none';
-  premiumBtn.textContent = isPremium ? '✨ Themes' : '🔒 Themes';
+  premiumBtn.innerHTML = `${isPremium ? ICON_SPARKLE : ICON_LOCK} Themes`;
 }
 
 function openPremiumModal() {
@@ -361,7 +364,7 @@ const themeGrid = document.getElementById('themeGrid');
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  themeToggle.textContent = theme === 'light' || theme === 'sepia' ? '🌙' : '☀️';
+  themeToggle.innerHTML = theme === 'light' ? ICON_MOON : ICON_SUN;
   localStorage.setItem('ij_theme', theme);
   document.querySelectorAll('.theme-swatch').forEach(s => {
     s.classList.toggle('selected', s.dataset.swatch === theme);
@@ -380,7 +383,7 @@ themeToggle.addEventListener('click', () => {
   applyTheme(current === 'dark' ? 'light' : 'dark');
 });
 
-/* ── Archive (history) modal ── */
+/* ── Archive (history) calendar ── */
 const archiveOverlay   = document.getElementById('archiveOverlay');
 const historyBtn       = document.getElementById('historyBtn');
 const closeArchiveBtn  = document.getElementById('closeArchiveBtn');
@@ -389,35 +392,70 @@ const archiveLocked    = document.getElementById('archiveLocked');
 const archiveUnlocked  = document.getElementById('archiveUnlocked');
 const archiveDayList   = document.getElementById('archiveDayList');
 const archiveUnlockBtn = document.getElementById('archiveUnlockBtn');
+const calGrid          = document.getElementById('calGrid');
+const calMonthLabel    = document.getElementById('calMonthLabel');
+const calPrevBtn       = document.getElementById('calPrevBtn');
+const calNextBtn       = document.getElementById('calNextBtn');
 
-function renderArchiveDayList() {
-  const days = listArchiveDays();
-  if (!days.length) {
-    archiveDayList.innerHTML = `<p class="archive-empty">No past logs yet.</p>`;
-    return;
-  }
-  archiveDayList.innerHTML = `<ul class="archive-list" role="list"></ul>`;
-  const list = archiveDayList.querySelector('.archive-list');
-  days.forEach(({ key, date, count }) => {
-    const li = document.createElement('li');
-    const btn = document.createElement('button');
-    btn.className = 'archive-day-btn';
-    btn.innerHTML = `${DAYS[date.getDay()]}, ${MONTHS[date.getMonth()]} ${date.getDate()}<span class="archive-count">${count} ${count === 1 ? 'entry' : 'entries'}</span>`;
-    btn.addEventListener('click', () => renderArchiveDayDetail(key, date));
-    li.appendChild(btn);
-    list.appendChild(li);
-  });
+let calViewDate = new Date();
+let selectedArchiveKey = null;
+
+function entryCountForDate(date) {
+  return loadEntriesForKey(dayKey(date)).length;
 }
 
-function renderArchiveDayDetail(key, date) {
-  const entries = loadEntriesForKey(key);
-  const back = document.createElement('button');
-  back.className = 'archive-back-btn';
-  back.textContent = '← Back';
-  back.addEventListener('click', renderArchiveDayList);
+function isSameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
 
+function renderCalendar() {
+  const year = calViewDate.getFullYear();
+  const month = calViewDate.getMonth();
+  const today = new Date();
+
+  calMonthLabel.textContent = `${MONTHS[month]} ${year}`;
+
+  const firstOfMonth = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const leadingBlanks = firstOfMonth.getDay();
+
+  calGrid.innerHTML = '';
+
+  for (let i = 0; i < leadingBlanks; i++) {
+    calGrid.appendChild(document.createElement('div'));
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day);
+    const count = entryCountForDate(date);
+
+    const btn = document.createElement('button');
+    btn.className = 'cal-day';
+    btn.textContent = String(day);
+    if (isSameDay(date, today)) btn.classList.add('today');
+    if (selectedArchiveKey === dayKey(date)) btn.classList.add('selected');
+
+    if (count > 0) {
+      const dot = document.createElement('span');
+      dot.className = 'cal-dot';
+      btn.appendChild(dot);
+      btn.addEventListener('click', () => selectArchiveDay(date));
+    } else {
+      btn.disabled = true;
+    }
+    calGrid.appendChild(btn);
+  }
+
+  const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
+  calNextBtn.disabled = isCurrentMonth;
+}
+
+function selectArchiveDay(date) {
+  selectedArchiveKey = dayKey(date);
+  renderCalendar();
+
+  const entries = loadEntriesForKey(selectedArchiveKey);
   archiveDayList.innerHTML = '';
-  archiveDayList.appendChild(back);
 
   const title = document.createElement('div');
   title.className = 'modal-price-line';
@@ -436,10 +474,26 @@ function renderArchiveDayDetail(key, date) {
   });
 }
 
+calPrevBtn.addEventListener('click', () => {
+  calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth() - 1, 1);
+  renderCalendar();
+});
+
+calNextBtn.addEventListener('click', () => {
+  if (calNextBtn.disabled) return;
+  calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth() + 1, 1);
+  renderCalendar();
+});
+
 function refreshArchiveModalState() {
   archiveLocked.style.display = isPremium ? 'none' : 'block';
   archiveUnlocked.style.display = isPremium ? 'block' : 'none';
-  if (isPremium) renderArchiveDayList();
+  if (isPremium) {
+    calViewDate = new Date();
+    selectedArchiveKey = null;
+    archiveDayList.innerHTML = `<p class="archive-empty">Tap a day with a dot to view its log.</p>`;
+    renderCalendar();
+  }
 }
 
 function openArchiveModal() {
