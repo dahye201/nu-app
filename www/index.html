@@ -12,23 +12,34 @@
       --text: #F5F5F5;
       --muted: #8E8E93;
       --placeholder: #48484A;
+      --input-placeholder: #6E6E73;
       --separator: #2C2C2E;
+      --surface: #1A1A1A;
+      --surface-border: #2C2C2E;
       --accent: #FF453A;
       --accent2: #FF453A;
+      --marker: #FF453A;
+      --emoji-idle-opacity: 0.7;
       --emoji-hover: rgba(255, 255, 255, 0.07);
       --emoji-selected: rgba(255, 255, 255, 0.11);
       --toggle-bg: rgba(255, 255, 255, 0.06);
       --font-override: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, Arial, sans-serif;
     }
 
-    [data-theme="light"] {
+    [data-theme="light"],
+    [data-theme="snow"] {
       --bg: #F2F2F7;
       --text: #1C1C1E;
       --muted: #6C6C70;
       --placeholder: #AEAEB2;
+      --input-placeholder: #86868B;
       --separator: #D1D1D6;
+      --surface: #FFFFFF;
+      --surface-border: #E5E5EA;
       --accent: #FF3B30;
       --accent2: #FF3B30;
+      --marker: #FF3B30;
+      --emoji-idle-opacity: 0.35;
       --emoji-hover: rgba(0, 0, 0, 0.05);
       --emoji-selected: rgba(0, 0, 0, 0.09);
       --toggle-bg: rgba(0, 0, 0, 0.05);
@@ -40,7 +51,10 @@
       --text: #F5F0FF;
       --muted: #9D7FC9;
       --placeholder: #4A2E7A;
+      --input-placeholder: #7457A8;
       --separator: #2E1155;
+      --surface: #150633;
+      --surface-border: #2E1155;
       --accent: #FF2ED1;
       --accent2: #00F0FF;
       --emoji-hover: rgba(255, 46, 209, 0.1);
@@ -54,7 +68,10 @@
       --text: #EFFFEF;
       --muted: #5FBF6B;
       --placeholder: #1F4023;
+      --input-placeholder: #3A7541;
       --separator: #1A2E1C;
+      --surface: #101410;
+      --surface-border: #1A2E1C;
       --accent: #FF10F0;
       --accent2: #39FF14;
       --emoji-hover: rgba(57, 255, 20, 0.08);
@@ -63,18 +80,21 @@
       --font-override: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, Arial, sans-serif;
     }
 
-    [data-theme="retro"] {
-      --bg: #0C1A0C;
-      --text: #4CFF4C;
-      --muted: #2E8F2E;
-      --placeholder: #1E5E1E;
-      --separator: #1F4A1F;
-      --accent: #FFB000;
-      --accent2: #4CFF4C;
-      --emoji-hover: rgba(76, 255, 76, 0.08);
-      --emoji-selected: rgba(255, 176, 0, 0.15);
-      --toggle-bg: rgba(76, 255, 76, 0.07);
-      --font-override: 'SF Mono', ui-monospace, 'Courier New', monospace;
+    [data-theme="christmas"] {
+      --bg: #0F2A1D;
+      --text: #F4EBD9;
+      --muted: #9DB8A3;
+      --placeholder: #6F9479;
+      --input-placeholder: #6F9479;
+      --separator: #24452F;
+      --surface: #133222;
+      --surface-border: #24452F;
+      --accent: #E63946;
+      --accent2: #E63946;
+      --emoji-hover: rgba(244, 235, 217, 0.06);
+      --emoji-selected: #163626;
+      --toggle-bg: #163626;
+      --font-override: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, Arial, sans-serif;
     }
 
     [data-theme="deepblue"] {
@@ -82,7 +102,10 @@
       --text: #E8ECFB;
       --muted: #7C8DBF;
       --placeholder: #2B3868;
+      --input-placeholder: #5866A0;
       --separator: #1B274D;
+      --surface: #101A3A;
+      --surface-border: #1B274D;
       --accent: #4361EE;
       --accent2: #4CC9F0;
       --emoji-hover: rgba(67, 97, 238, 0.12);
@@ -169,6 +192,7 @@
     }
 
     .day-block {
+      position: relative;
       display: flex;
       align-items: baseline;
       gap: 7px;
@@ -235,7 +259,7 @@
     }
 
     textarea::placeholder {
-      color: var(--placeholder);
+      color: var(--input-placeholder);
     }
 
     .input-footer {
@@ -253,7 +277,7 @@
       font-size: 18px;
       padding: 5px 7px;
       border-radius: 8px;
-      opacity: 0.35;
+      opacity: var(--emoji-idle-opacity);
       transition: opacity 0.15s, background 0.15s;
       line-height: 1;
       display: flex;
@@ -383,7 +407,8 @@
       box-shadow: 0 8px 32px rgba(0,0,0,0.35);
     }
 
-    [data-theme="light"] .emoji-panel {
+    [data-theme="light"] .emoji-panel,
+    [data-theme="snow"] .emoji-panel {
       box-shadow: 0 8px 24px rgba(0,0,0,0.12);
     }
 
@@ -482,7 +507,8 @@
       box-shadow: 0 24px 64px rgba(0,0,0,0.6);
     }
 
-    [data-theme="light"] .modal {
+    [data-theme="light"] .modal,
+    [data-theme="snow"] .modal {
       background: #FFFFFF;
       border-color: #E5E5EA;
       box-shadow: 0 16px 48px rgba(0,0,0,0.14);
@@ -596,50 +622,151 @@
     }
 
     .theme-swatch {
-      border: 2px solid var(--separator);
-      border-radius: 12px;
-      height: 52px;
+      background: none;
+      border: none;
       cursor: pointer;
       padding: 0;
-      transition: border-color 0.15s, transform 0.1s;
-      position: relative;
-      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: transform 0.1s;
     }
 
     .theme-swatch:active { transform: scale(0.96); }
 
-    .theme-swatch.selected {
+    .theme-swatch .swatch-card {
+      display: block;
+      border: 2px solid var(--separator);
+      border-radius: 12px;
+      height: 52px;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+
+    .theme-swatch.selected .swatch-card {
       border-color: var(--accent);
     }
 
-    .theme-swatch .swatch-label {
-      position: absolute;
-      bottom: 3px;
-      left: 0;
-      right: 0;
-      font-size: 9px;
-      letter-spacing: 0.02em;
-      text-align: center;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    /* Mini preview: data-theme on the preview scopes that theme's real tokens to it */
+    .theme-swatch .swatch-preview {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 2px;
+      height: 100%;
+      padding-top: 14px;
+      background: var(--bg);
+      font-family: var(--font-override);
     }
 
-    .theme-swatch[data-swatch="dark"] { background: #121212; }
-    .theme-swatch[data-swatch="dark"] .swatch-label { color: #8E8E93; }
-    .theme-swatch[data-swatch="light"] { background: #F2F2F7; }
-    .theme-swatch[data-swatch="light"] .swatch-label { color: #6C6C70; }
-    .theme-swatch[data-swatch="cyberpunk"] { background: linear-gradient(135deg, #0D0221 55%, #FF2ED1 55%, #00F0FF 100%); }
-    .theme-swatch[data-swatch="cyberpunk"] .swatch-label { color: #F5F0FF; }
-    .theme-swatch[data-swatch="neon"] { background: linear-gradient(135deg, #0A0A0A 55%, #39FF14 55%, #FF10F0 100%); }
-    .theme-swatch[data-swatch="neon"] .swatch-label { color: #EFFFEF; }
-    .theme-swatch[data-swatch="retro"] { background: linear-gradient(135deg, #0C1A0C 55%, #4CFF4C 55%, #FFB000 100%); }
-    .theme-swatch[data-swatch="retro"] .swatch-label { color: #4CFF4C; font-family: 'SF Mono', ui-monospace, monospace; }
-    .theme-swatch[data-swatch="deepblue"] { background: linear-gradient(135deg, #0A1128 55%, #4361EE 55%, #4CC9F0 100%); }
-    .theme-swatch[data-swatch="deepblue"] .swatch-label { color: #E8ECFB; }
+    .theme-swatch .swatch-nu {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.6px;
+      color: var(--text);
+    }
+
+    .theme-swatch .swatch-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background-color: var(--accent2);
+    }
+
+    .theme-swatch .swatch-label {
+      font-size: 11px;
+      letter-spacing: 0.02em;
+      text-align: center;
+      color: var(--text);
+      font-family: inherit;
+    }
 
     .theme-locked-hint {
       font-size: 11px;
       color: var(--placeholder);
       text-align: center;
+      margin-bottom: 20px;
+    }
+
+    /* ── Seasonal decorations (Snow / Christmas). Static — no animation. ── */
+    /* Hat is sized/placed relative to the logo width W: % width/left and % margins resolve against W.
+       --hat-drop lowers it from the top of the logo box onto the top of the "n". */
+    .day-block { --hat-drop: 19px; }
+    .theme-swatch .swatch-logo { --hat-drop: 6px; }
+
+    .logo-hat {
+      display: none;
+      position: absolute;
+      width: 34%;
+      height: auto;
+      left: -10%;
+      top: 0;
+      margin-top: calc(-16% + var(--hat-drop, 0px));
+      transform: rotate(-26deg);
+      transform-origin: 70% 80%;
+      pointer-events: none;
+    }
+
+    [data-theme="snow"] .logo-hat-snow,
+    [data-theme="christmas"] .logo-hat-christmas {
+      display: block;
+    }
+
+    .snow-bottom,
+    .christmas-lights {
+      display: none;
+      pointer-events: none;
+    }
+
+    [data-theme="snow"] .snow-bottom {
+      display: block;
+      position: fixed;
+      left: -8%;
+      bottom: -2%;
+      width: 116%;
+      height: auto;
+      z-index: -1;
+      filter: drop-shadow(0 -4px 10px rgba(30,40,60,0.08));
+    }
+
+    /* Keep the last entry and "Copy today's log" clear of the snow bank (snow height = 116vw × 50/170) */
+    [data-theme="snow"] .container {
+      padding-bottom: calc(116vw * 50 / 170);
+    }
+
+    [data-theme="christmas"] .christmas-lights {
+      display: block;
+      position: fixed;
+      left: 0;
+      bottom: env(safe-area-inset-bottom);
+      width: 100%;
+      height: auto;
+      z-index: -1;
+    }
+
+    /* Keep the last entry and "Copy today's log" clear of the lights (lights height = 100vw × 64/400) */
+    [data-theme="christmas"] .container {
+      padding-bottom: calc(100vw * 64 / 400 + 24px);
+    }
+
+    .theme-swatch .swatch-logo {
+      position: relative;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 2px;
+    }
+
+    .theme-swatch .swatch-badge {
+      font-size: 8px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-align: center;
+      color: var(--muted);
+      margin-top: -4px;
+    }
+
+    .seasonal-grid {
       margin-bottom: 20px;
     }
 
@@ -697,6 +824,11 @@
     }
 
     /* ── Archive (history) calendar ── */
+    #archiveOverlay .modal {
+      background: var(--surface);
+      border-color: var(--surface-border);
+    }
+
     .cal-header {
       display: flex;
       align-items: center;
@@ -772,7 +904,7 @@
       width: 4px;
       height: 4px;
       border-radius: 50%;
-      background: var(--accent);
+      background: var(--marker);
       margin-top: 2px;
     }
 
@@ -848,7 +980,7 @@
   <!-- Premium Modal -->
   <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-label="nu. Premium">
     <div class="modal">
-      <div class="modal-brand">nu. Premium 🔒</div>
+      <div class="modal-brand" id="premiumTitle">nu. premium 🔒</div>
 
       <!-- Locked state: purchase CTA -->
       <div id="premiumLocked">
@@ -859,6 +991,11 @@
           <li>Archive and view past logs with history view.</li>
           <li>Unlock premium minimalist themes.</li>
         </ul>
+        <!-- Seasonal themes: free for everyone in December -->
+        <div class="theme-grid seasonal-grid" id="seasonalGrid" style="display:none">
+          <button class="theme-swatch" data-swatch="snow" data-seasonal aria-label="Snow theme"><span class="swatch-card"><span class="swatch-preview" data-theme="snow"><span class="swatch-logo"><span class="swatch-nu">nu</span><span class="swatch-dot"></span><img class="logo-hat logo-hat-snow" src="seasonal/santa-hat-snow.svg" alt=""></span></span></span><span class="swatch-label">Snow</span><span class="swatch-badge">FREE IN DEC</span></button>
+          <button class="theme-swatch" data-swatch="christmas" data-seasonal aria-label="Christmas theme"><span class="swatch-card"><span class="swatch-preview" data-theme="christmas"><span class="swatch-logo"><span class="swatch-nu">nu</span><span class="swatch-dot"></span><img class="logo-hat logo-hat-christmas" src="seasonal/santa-hat-christmas.svg" alt=""></span></span></span><span class="swatch-label">Christmas</span><span class="swatch-badge">FREE IN DEC</span></button>
+        </div>
         <div class="modal-actions">
           <button class="modal-cta" id="unlockBtn">Unlock Premium</button>
           <button class="modal-secondary" id="restoreBtn">Restore Purchases</button>
@@ -870,12 +1007,13 @@
       <div id="premiumUnlocked" style="display:none">
         <div class="modal-price-line">Premium unlocked. Pick a theme:</div>
         <div class="theme-grid" id="themeGrid">
-          <button class="theme-swatch" data-swatch="dark" aria-label="Dark theme"><span class="swatch-label">Dark</span></button>
-          <button class="theme-swatch" data-swatch="light" aria-label="Light theme"><span class="swatch-label">Light</span></button>
-          <button class="theme-swatch" data-swatch="cyberpunk" aria-label="Cyberpunk theme"><span class="swatch-label">Cyberpunk</span></button>
-          <button class="theme-swatch" data-swatch="neon" aria-label="Neon theme"><span class="swatch-label">Neon</span></button>
-          <button class="theme-swatch" data-swatch="retro" aria-label="Retro theme"><span class="swatch-label">Retro</span></button>
-          <button class="theme-swatch" data-swatch="deepblue" aria-label="Deep Blue theme"><span class="swatch-label">Deep Blue</span></button>
+          <button class="theme-swatch" data-swatch="snow" data-seasonal aria-label="Snow theme" style="display:none"><span class="swatch-card"><span class="swatch-preview" data-theme="snow"><span class="swatch-logo"><span class="swatch-nu">nu</span><span class="swatch-dot"></span><img class="logo-hat logo-hat-snow" src="seasonal/santa-hat-snow.svg" alt=""></span></span></span><span class="swatch-label">Snow</span><span class="swatch-badge">FREE IN DEC</span></button>
+          <button class="theme-swatch" data-swatch="christmas" data-seasonal aria-label="Christmas theme" style="display:none"><span class="swatch-card"><span class="swatch-preview" data-theme="christmas"><span class="swatch-logo"><span class="swatch-nu">nu</span><span class="swatch-dot"></span><img class="logo-hat logo-hat-christmas" src="seasonal/santa-hat-christmas.svg" alt=""></span></span></span><span class="swatch-label">Christmas</span><span class="swatch-badge">FREE IN DEC</span></button>
+          <button class="theme-swatch" data-swatch="dark" aria-label="Dark theme"><span class="swatch-card"><span class="swatch-preview" data-theme="dark"><span class="swatch-nu">nu</span><span class="swatch-dot"></span></span></span><span class="swatch-label">Dark</span></button>
+          <button class="theme-swatch" data-swatch="light" aria-label="Light theme"><span class="swatch-card"><span class="swatch-preview" data-theme="light"><span class="swatch-nu">nu</span><span class="swatch-dot"></span></span></span><span class="swatch-label">Light</span></button>
+          <button class="theme-swatch" data-swatch="cyberpunk" aria-label="Cyberpunk theme"><span class="swatch-card"><span class="swatch-preview" data-theme="cyberpunk"><span class="swatch-nu">nu</span><span class="swatch-dot"></span></span></span><span class="swatch-label">Cyberpunk</span></button>
+          <button class="theme-swatch" data-swatch="neon" aria-label="Neon theme"><span class="swatch-card"><span class="swatch-preview" data-theme="neon"><span class="swatch-nu">nu</span><span class="swatch-dot"></span></span></span><span class="swatch-label">Neon</span></button>
+          <button class="theme-swatch" data-swatch="deepblue" aria-label="Deep Blue theme"><span class="swatch-card"><span class="swatch-preview" data-theme="deepblue"><span class="swatch-nu">nu</span><span class="swatch-dot"></span></span></span><span class="swatch-label">Deep Blue</span></button>
         </div>
         <div class="modal-actions">
           <button class="modal-close" id="closeModalBtn2">Close</button>
@@ -917,12 +1055,17 @@
     </div>
   </div>
 
+  <img class="snow-bottom" src="seasonal/snow-bottom.svg" alt="">
+  <img class="christmas-lights" src="seasonal/christmas-lights.svg" alt="">
+
   <div class="container">
     <!-- Header -->
     <div class="header">
       <div class="day-block">
         <span class="day-text">nu</span>
         <span class="day-dot"></span>
+        <img class="logo-hat logo-hat-snow" src="seasonal/santa-hat-snow.svg" alt="">
+        <img class="logo-hat logo-hat-christmas" src="seasonal/santa-hat-christmas.svg" alt="">
       </div>
       <div class="date-block" id="dateText"></div>
     </div>

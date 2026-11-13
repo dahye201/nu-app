@@ -303,15 +303,18 @@ const premiumUnlocked = document.getElementById('premiumUnlocked');
 const unlockBtn       = document.getElementById('unlockBtn');
 const restoreBtn      = document.getElementById('restoreBtn');
 const modalPrice      = document.getElementById('modalPrice');
+const premiumTitle    = document.getElementById('premiumTitle');
 
 function refreshPremiumModalState() {
   premiumLocked.style.display = isPremium ? 'none' : 'block';
   premiumUnlocked.style.display = isPremium ? 'block' : 'none';
   premiumBtn.innerHTML = `${isPremium ? ICON_SPARKLE : ICON_LOCK} Themes`;
+  premiumTitle.textContent = `nu. premium ${isPremium ? '✨' : '🔒'}`;
 }
 
 function openPremiumModal() {
   refreshPremiumModalState();
+  refreshSeasonalThemes();
   modalOverlay.classList.add('visible');
   document.body.style.overflow = 'hidden';
 }
@@ -360,19 +363,25 @@ async function loadPremiumProduct() {
 }
 
 /* ── Theme picker (premium) ── */
-const themeGrid = document.getElementById('themeGrid');
+const BASE_THEMES = ['dark', 'light', 'cyberpunk', 'neon', 'deepblue'];
+const SEASONAL_THEMES = ['snow', 'christmas'];
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  themeToggle.innerHTML = theme === 'light' ? ICON_MOON : ICON_SUN;
+  themeToggle.innerHTML = (theme === 'light' || theme === 'snow') ? ICON_MOON : ICON_SUN;
   localStorage.setItem('ij_theme', theme);
   document.querySelectorAll('.theme-swatch').forEach(s => {
     s.classList.toggle('selected', s.dataset.swatch === theme);
   });
 }
 
-themeGrid.querySelectorAll('.theme-swatch').forEach(btn => {
+document.querySelectorAll('.theme-swatch').forEach(btn => {
   btn.addEventListener('click', () => {
+    // Remember the regular theme so we can return to it once December is over
+    const current = document.documentElement.getAttribute('data-theme');
+    if (SEASONAL_THEMES.includes(btn.dataset.swatch) && BASE_THEMES.includes(current)) {
+      localStorage.setItem('ij_theme_prev', current);
+    }
     applyTheme(btn.dataset.swatch);
     tap();
   });
@@ -381,6 +390,31 @@ themeGrid.querySelectorAll('.theme-swatch').forEach(btn => {
 themeToggle.addEventListener('click', () => {
   const current = document.documentElement.getAttribute('data-theme');
   applyTheme(current === 'dark' ? 'light' : 'dark');
+});
+
+/* ── Seasonal themes (Snow / Christmas): free for everyone in December ── */
+const seasonalGrid = document.getElementById('seasonalGrid');
+
+function isSeasonalWindow(now = new Date()) {
+  return now.getMonth() === 11;
+}
+
+function refreshSeasonalThemes() {
+  const inSeason = isSeasonalWindow();
+  document.querySelectorAll('.theme-swatch[data-seasonal]').forEach(s => {
+    s.style.display = inSeason ? '' : 'none';
+  });
+  seasonalGrid.style.display = inSeason ? '' : 'none';
+
+  const current = document.documentElement.getAttribute('data-theme');
+  if (!inSeason && SEASONAL_THEMES.includes(current)) {
+    const prev = localStorage.getItem('ij_theme_prev');
+    applyTheme(BASE_THEMES.includes(prev) ? prev : 'light');
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refreshSeasonalThemes();
 });
 
 /* ── Archive (history) calendar ── */
@@ -528,7 +562,8 @@ loadPremiumProduct();
 
 /* ── Boot ── */
 const savedTheme = localStorage.getItem('ij_theme');
-applyTheme(savedTheme || 'dark');
+applyTheme([...BASE_THEMES, ...SEASONAL_THEMES].includes(savedTheme) ? savedTheme : 'dark');
+refreshSeasonalThemes();
 
 initDate();
 scheduleClockTick();
