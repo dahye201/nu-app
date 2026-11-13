@@ -1,0 +1,55 @@
+workflows:
+  ios-release:
+    name: nu. iOS release (TestFlight)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    integrations:
+      # Name of the App Store Connect API key added in Codemagic → Team → Integrations
+      app_store_connect: nu-asc-key
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.dadahuis.nu
+      groups:
+        # Codemagic env group with REVENUECAT_IOS_API_KEY (secret) and APP_STORE_APPLE_ID
+        - nu_secrets
+      node: latest
+      xcode: latest
+
+    scripts:
+      - name: Install npm dependencies
+        script: npm ci
+
+      - name: Write src/config.js from secret
+        script: |
+          echo "export const REVENUECAT_IOS_API_KEY = '$REVENUECAT_IOS_API_KEY';" > src/config.js
+
+      - name: Build web bundle and sync iOS
+        script: npm run sync
+
+      - name: Set build number (latest TestFlight build + 1)
+        script: |
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          NEXT=$((LATEST + 1))
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9]*;/CURRENT_PROJECT_VERSION = $NEXT;/g" ios/App/App.xcodeproj/project.pbxproj
+          echo "Build number: $NEXT"
+
+      - name: Set up code signing
+        script: xcode-project use-profiles
+
+      - name: Build IPA
+        script: |
+          xcode-project build-ipa \
+            --project "ios/App/App.xcodeproj" \
+            --scheme "App"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
