@@ -34,7 +34,17 @@ const ICON_SPARKLE = `<svg viewBox="0 0 20 20" fill="currentColor">
 </svg>`;
 
 let selectedEmoji = null;
-let isPremium = false;
+// Last premium status RevenueCat confirmed on this device, so the UI can render
+// immediately on launch (and keep working if RevenueCat is slow or fails).
+// No saved value (first launch) = free.
+const PREMIUM_CACHE_KEY = 'ij_premium_cached';
+function readCachedPremium() {
+  try { return localStorage.getItem(PREMIUM_CACHE_KEY) === '1'; } catch { return false; }
+}
+function saveCachedPremium(premium) {
+  try { localStorage.setItem(PREMIUM_CACHE_KEY, premium ? '1' : '0'); } catch {}
+}
+let isPremium = readCachedPremium();
 let premiumProduct = null;
 
 const input       = document.getElementById('journalInput');
@@ -109,6 +119,7 @@ const LOG_LIMIT = 5;
 
 function renderTimeline(entries) {
   timeline.innerHTML = '';
+  document.getElementById('recap').classList.remove('after-locked');
 
   if (!entries.length) {
     const hint = document.createElement('p');
@@ -143,15 +154,21 @@ function renderTimeline(entries) {
   });
 
   if (hidden > 0) {
+    // Locked row: reads as the last row of the list (divider above, none below)
     const hr = document.createElement('hr');
     hr.className = 'log-divider';
     timeline.appendChild(hr);
 
-    const btn = document.createElement('button');
-    btn.className = 'show-older-btn';
-    btn.textContent = `+ Show older logs today (🔒)`;
-    btn.addEventListener('click', openPremiumModal);
-    timeline.appendChild(btn);
+    const row = document.createElement('button');
+    row.className = 'log-entry locked-row';
+    row.setAttribute('aria-label', `${hidden} earlier ${hidden === 1 ? 'entry' : 'entries'} today. Unlock with Premium`);
+    row.innerHTML = `
+      <span class="locked-row-text">${hidden} earlier ${hidden === 1 ? 'entry' : 'entries'} today</span>
+      <span class="locked-row-icon" aria-hidden="true">${ICON_LOCK}</span>
+    `;
+    row.addEventListener('click', () => openPaywall({ source: 'older_entries' }));
+    timeline.appendChild(row);
+    document.getElementById('recap').classList.add('after-locked');
   }
 }
 
@@ -257,59 +274,90 @@ document.querySelectorAll('.emoji-btn').forEach(btn => {
 /* ── More emoji panel ── */
 const MORE_EMOJIS = [
   '🙂','😐','😫','🤩',
-  '🧠','☕','🔋','📝',
   '🫠','😤','🥱','🚨',
-  '🤫','🏃','🛑','✨',
+  '🔋','🪫','☕','🧠',
+  '🎧','📝','📱','🏃',
+  '💧','🍽️','✅','✨',
 ];
+
+// Extra top row for everyone during the Christmas event (Nov–Dec, device local date)
+const DECEMBER_EMOJIS = ['🎄','🎁','🍪','❄️'];
 
 const moreBtn    = document.getElementById('moreBtn');
 const emojiPanel = document.getElementById('emojiPanel');
 const emojiGrid  = document.getElementById('emojiGrid');
 
-MORE_EMOJIS.forEach(em => {
-  const btn = document.createElement('button');
-  btn.textContent = em;
-  btn.setAttribute('aria-label', em);
-  btn.addEventListener('click', () => {
-    selectEmoji(em, btn);
-    closePanel();
-    input.focus();
+function renderEmojiGrid() {
+  emojiGrid.replaceChildren();
+  const seasonal = isSeasonalWindow();
+  const set = seasonal ? [...DECEMBER_EMOJIS, ...MORE_EMOJIS] : MORE_EMOJIS;
+  set.forEach((em, i) => {
+    if (seasonal && i === DECEMBER_EMOJIS.length) {
+      const divider = document.createElement('div');
+      divider.className = 'emoji-divider';
+      divider.setAttribute('aria-hidden', 'true');
+      emojiGrid.appendChild(divider);
+    }
+    const btn = document.createElement('button');
+    btn.textContent = em;
+    btn.setAttribute('aria-label', em);
+    btn.classList.toggle('selected', em === selectedEmoji);
+    btn.addEventListener('click', () => {
+      selectEmoji(em, btn);
+      closePanel();
+      input.focus();
+    });
+    emojiGrid.appendChild(btn);
   });
-  emojiGrid.appendChild(btn);
-});
+}
+renderEmojiGrid();
+
+// The fixed top-right buttons (Themes, calendar, theme toggle)
+const HEADER_BUTTON_IDS = ['premiumBtn', 'historyBtn', 'themeToggle'];
+const HEADER_GAP = 12;
+const PANEL_OFFSET = 8; // matches the CSS calc(100% + 8px)
+
+/** Open upward from "+" unless that would come within HEADER_GAP of the header buttons; then open downward. */
+function positionPanel() {
+  const headerBottom = Math.max(0, ...HEADER_BUTTON_IDS
+    .map(id => document.getElementById(id))
+    .filter(Boolean)
+    .map(el => el.getBoundingClientRect().bottom));
+  const roomAbove = moreBtn.getBoundingClientRect().top - PANEL_OFFSET - (headerBottom + HEADER_GAP);
+  emojiPanel.classList.toggle('open-down', emojiPanel.offsetHeight > roomAbove);
+}
 
 function closePanel() {
   emojiPanel.classList.remove('visible');
   moreBtn.classList.remove('open');
+  window.removeEventListener('scroll', positionPanel);
 }
 
 moreBtn.addEventListener('click', e => {
   e.stopPropagation();
   const isOpen = emojiPanel.classList.contains('visible');
-  isOpen ? closePanel() : (emojiPanel.classList.add('visible'), moreBtn.classList.add('open'));
+  if (isOpen) return closePanel();
+  renderEmojiGrid(); // picks up the event row if the date changed while the app was open
+  emojiPanel.classList.add('visible'); // visible first so it can be measured
+  positionPanel();
+  moreBtn.classList.add('open');
+  window.addEventListener('scroll', positionPanel, { passive: true });
 });
 
 document.addEventListener('click', e => {
   if (!emojiPanel.contains(e.target) && e.target !== moreBtn) closePanel();
 });
 
-/* ── Premium modal ── */
+/* ── Themes popup (everyone) ── */
 const modalOverlay    = document.getElementById('modalOverlay');
 const premiumBtn      = document.getElementById('premiumBtn');
-const closeModalBtn   = document.getElementById('closeModalBtn');
 const closeModalBtn2  = document.getElementById('closeModalBtn2');
-const premiumLocked   = document.getElementById('premiumLocked');
-const premiumUnlocked = document.getElementById('premiumUnlocked');
-const unlockBtn       = document.getElementById('unlockBtn');
-const restoreBtn      = document.getElementById('restoreBtn');
-const modalPrice      = document.getElementById('modalPrice');
-const premiumTitle    = document.getElementById('premiumTitle');
 
 function refreshPremiumModalState() {
-  premiumLocked.style.display = isPremium ? 'none' : 'block';
-  premiumUnlocked.style.display = isPremium ? 'block' : 'none';
   premiumBtn.innerHTML = `${isPremium ? ICON_SPARKLE : ICON_LOCK} Themes`;
-  premiumTitle.textContent = `nu. premium ${isPremium ? '✨' : '🔒'}`;
+  document.getElementById('themesSubtitle').textContent = isPremium ? 'Premium unlocked. Pick a theme:' : 'Pick a theme:';
+  modalOverlay.classList.toggle('themes-locked', !isPremium);
+  document.querySelectorAll('.theme-swatch .swatch-lock').forEach(el => { el.innerHTML = ICON_LOCK; });
 }
 
 function openPremiumModal() {
@@ -321,14 +369,96 @@ function openPremiumModal() {
 
 function closePremiumModal() {
   modalOverlay.classList.remove('visible');
-  document.body.style.overflow = '';
+  syncBodyScrollLock();
 }
 
-premiumBtn.addEventListener('click', openPremiumModal);
-closeModalBtn.addEventListener('click', closePremiumModal);
+/** Keep the page from scrolling while any popup is open. */
+function syncBodyScrollLock() {
+  const anyOpen = document.querySelector('.modal-overlay.visible');
+  document.body.style.overflow = anyOpen ? 'hidden' : '';
+}
+
+premiumBtn.addEventListener('click', () => openPremiumModal());
 closeModalBtn2.addEventListener('click', closePremiumModal);
 modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closePremiumModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closePremiumModal(); });
+
+/* ── Paywall ── */
+const PREMIUM_THEMES = ['paper', 'cyberpunk', 'neon', 'deepblue'];
+const paywallOverlay  = document.getElementById('paywallOverlay');
+const paywallHeadline = document.getElementById('paywallHeadline');
+const paywallBenefits = document.getElementById('paywallBenefits');
+const unlockBtn       = document.getElementById('unlockBtn');
+const restoreBtn      = document.getElementById('restoreBtn');
+const closePaywallBtn = document.getElementById('closePaywallBtn');
+
+const ICON_CHECK = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M4.5 10.5l3.5 3.5 7.5-8"/>
+</svg>`;
+
+// One fixed message wherever the paywall opens; `source` only decides what happens after purchase.
+const PAYWALL_HEADLINE = 'Look back at any day.';
+const PAYWALL_SUBTITLE = 'Your memories, always within reach.';
+const PAYWALL_BENEFITS = [
+  'Browse any past day',
+  'Access all your daily entries',
+  'Unlock exclusive themes',
+];
+const PAYWALL_SOURCES = ['older_entries', 'history', 'themes', 'default'];
+
+let paywallContext = { source: 'default', theme: null };
+
+/**
+ * Open the paywall.
+ * source: 'older_entries' | 'history' | 'themes' | 'default'
+ * theme:  premium theme ID that was tapped (themes only)
+ */
+function openPaywall({ source = 'default', theme = null } = {}) {
+  if (!PAYWALL_SOURCES.includes(source)) source = 'default';
+  if (!PREMIUM_THEMES.includes(theme)) theme = null;
+  paywallContext = { source, theme };
+
+  paywallHeadline.textContent = PAYWALL_HEADLINE;
+  document.getElementById('paywallSubtitle').textContent = PAYWALL_SUBTITLE;
+  paywallBenefits.replaceChildren(...PAYWALL_BENEFITS.map(text => {
+    const li = document.createElement('li');
+    li.innerHTML = `${ICON_CHECK}<span></span>`;
+    li.querySelector('span').textContent = text;
+    return li;
+  }));
+
+  paywallOverlay.classList.add('visible');
+  syncBodyScrollLock();
+}
+
+function closePaywall() {
+  paywallOverlay.classList.remove('visible');
+  syncBodyScrollLock();
+}
+
+/** What happens right after a successful purchase or restore, based on where the paywall was opened. */
+function afterUnlock() {
+  const { source, theme } = paywallContext;
+  closePaywall();
+  if (source === 'history') {
+    openArchiveModal();
+  } else if (source === 'themes' && theme) {
+    chooseTheme(theme);
+  }
+  // older_entries: onPremiumChange(true) already re-rendered today's full list
+}
+
+closePaywallBtn.addEventListener('click', closePaywall);
+paywallOverlay.addEventListener('click', e => { if (e.target === paywallOverlay) closePaywall(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (paywallOverlay.classList.contains('visible')) closePaywall();
+  else closePremiumModal();
+});
+
+function unlockLabel() {
+  // Localized store price, e.g. "Unlock Premium · $4.99"
+  return premiumProduct ? `Unlock Premium · ${premiumProduct.priceString}` : 'Unlock Premium';
+}
 
 unlockBtn.addEventListener('click', async () => {
   if (!premiumProduct) return;
@@ -336,10 +466,10 @@ unlockBtn.addEventListener('click', async () => {
   unlockBtn.textContent = 'Processing…';
   const result = await purchasePremium(premiumProduct);
   unlockBtn.disabled = false;
-  unlockBtn.textContent = 'Unlock Premium';
+  unlockBtn.textContent = unlockLabel();
   if (result === 'success') {
     onPremiumChange(true);
-    refreshPremiumModalState();
+    afterUnlock();
   }
 });
 
@@ -349,7 +479,7 @@ restoreBtn.addEventListener('click', async () => {
   restoreBtn.textContent = 'Restore Purchases';
   if (restored) {
     onPremiumChange(true);
-    refreshPremiumModalState();
+    afterUnlock();
   } else {
     restoreBtn.textContent = 'No purchases found';
     setTimeout(() => { restoreBtn.textContent = 'Restore Purchases'; }, 2000);
@@ -358,45 +488,113 @@ restoreBtn.addEventListener('click', async () => {
 
 async function loadPremiumProduct() {
   premiumProduct = await getPremiumProduct();
-  modalPrice.textContent = premiumProduct?.priceString ?? 'unavailable';
+  unlockBtn.textContent = unlockLabel();
   unlockBtn.disabled = !premiumProduct;
 }
 
 /* ── Theme picker (premium) ── */
-const BASE_THEMES = ['dark', 'light', 'cyberpunk', 'neon', 'deepblue'];
+const BASE_THEMES = ['dark', 'light', 'cyberpunk', 'neon', 'deepblue', 'paper'];
 const SEASONAL_THEMES = ['snow', 'christmas'];
 
-function applyTheme(theme) {
+// Christmas event: Snow is the light variant, Christmas the dark one.
+const XMAS_OFF_KEY = 'ij_xmas_off';
+const isLightTheme = (theme) => theme === 'light' || theme === 'snow' || theme === 'paper';
+const xmasVariant = (theme) => (isLightTheme(theme) ? 'snow' : 'christmas');
+
+// Sun/moon "return to" memory: set only when the toggle leaves a premium theme (e.g. Paper → Dark),
+// used only by the very next toggle. Any other theme change (picker, Default, Christmas event) clears it.
+const TOGGLE_RETURN_KEY = 'ij_toggle_return';
+
+function applyTheme(theme, { fromToggle = false } = {}) {
+  if (!fromToggle) localStorage.removeItem(TOGGLE_RETURN_KEY);
   document.documentElement.setAttribute('data-theme', theme);
-  themeToggle.innerHTML = (theme === 'light' || theme === 'snow') ? ICON_MOON : ICON_SUN;
+  themeToggle.innerHTML = isLightTheme(theme) ? ICON_MOON : ICON_SUN;
   localStorage.setItem('ij_theme', theme);
+  const seasonal = SEASONAL_THEMES.includes(theme);
+  // After tapping "Default", highlight only that card, not also the theme it restored
+  const viaDefault = !seasonal && isSeasonalWindow() && localStorage.getItem(XMAS_OFF_KEY) === 'default';
   document.querySelectorAll('.theme-swatch').forEach(s => {
-    s.classList.toggle('selected', s.dataset.swatch === theme);
+    const key = s.dataset.swatch;
+    const selected = key === 'xmas' ? seasonal
+      : key === 'default' ? viaDefault
+      : key === theme && !viaDefault;
+    s.classList.toggle('selected', selected);
   });
+}
+
+/** Switch on the Christmas look, remembering the regular theme to return to. */
+function enterXmas() {
+  const current = document.documentElement.getAttribute('data-theme');
+  if (BASE_THEMES.includes(current)) localStorage.setItem('ij_theme_prev', current);
+  applyTheme(xmasVariant(current));
+}
+
+/** Back to the user's regular theme. */
+function leaveXmas() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const wantLight = isLightTheme(current); // Snow → light side, Christmas → dark side
+  const prev = localStorage.getItem('ij_theme_prev');
+  // Return to the remembered theme only if it matches the light/dark side the user is on now
+  // (they may have flipped Snow ↔ Christmas since) and they can still use it.
+  const prevOk = BASE_THEMES.includes(prev)
+    && isLightTheme(prev) === wantLight
+    && (isPremium || !PREMIUM_THEMES.includes(prev));
+  applyTheme(prevOk ? prev : (wantLight ? 'light' : 'dark'));
+}
+
+/** Apply a theme the user picked (picker or after buying it from the paywall). */
+function chooseTheme(key) {
+  // Picking a regular theme also opts out of the event look
+  if (isSeasonalWindow()) localStorage.setItem(XMAS_OFF_KEY, 'theme');
+  localStorage.removeItem(TOGGLE_RETURN_KEY);
+  applyTheme(key);
 }
 
 document.querySelectorAll('.theme-swatch').forEach(btn => {
   btn.addEventListener('click', () => {
-    // Remember the regular theme so we can return to it once December is over
-    const current = document.documentElement.getAttribute('data-theme');
-    if (SEASONAL_THEMES.includes(btn.dataset.swatch) && BASE_THEMES.includes(current)) {
-      localStorage.setItem('ij_theme_prev', current);
+    const key = btn.dataset.swatch;
+    if (PREMIUM_THEMES.includes(key) && !isPremium) {
+      openPaywall({ source: 'themes', theme: key });
+      return;
     }
-    applyTheme(btn.dataset.swatch);
+    if (key === 'xmas') {
+      localStorage.removeItem(XMAS_OFF_KEY);
+      enterXmas();
+    } else if (key === 'default') {
+      localStorage.setItem(XMAS_OFF_KEY, 'default');
+      leaveXmas();
+    } else {
+      chooseTheme(key);
+    }
     tap();
   });
 });
 
 themeToggle.addEventListener('click', () => {
   const current = document.documentElement.getAttribute('data-theme');
-  applyTheme(current === 'dark' ? 'light' : 'dark');
+  if (SEASONAL_THEMES.includes(current)) {
+    applyTheme(current === 'snow' ? 'christmas' : 'snow', { fromToggle: true });
+  } else {
+    // Sun/moon flips between light and dark. If the user was on a premium theme (e.g. Paper),
+    // remember it so flipping back returns to that theme instead of plain Light/Dark.
+    const target = isLightTheme(current) ? 'dark' : 'light';
+    const saved = localStorage.getItem(TOGGLE_RETURN_KEY);
+    if (current !== 'dark' && current !== 'light') {
+      applyTheme(target, { fromToggle: true });
+      localStorage.setItem(TOGGLE_RETURN_KEY, current);
+    } else if (BASE_THEMES.includes(saved) && isLightTheme(saved) === (target === 'light')
+               && (isPremium || !PREMIUM_THEMES.includes(saved))) {
+      applyTheme(saved); // consumes the memory
+    } else {
+      applyTheme(target);
+    }
+  }
 });
 
-/* ── Seasonal themes (Snow / Christmas): free for everyone in December ── */
-const seasonalGrid = document.getElementById('seasonalGrid');
+/* ── Christmas event: on by default for everyone, November–December ── */
 
 function isSeasonalWindow(now = new Date()) {
-  return now.getMonth() === 11;
+  return now.getMonth() >= 10; // November–December
 }
 
 function refreshSeasonalThemes() {
@@ -404,12 +602,17 @@ function refreshSeasonalThemes() {
   document.querySelectorAll('.theme-swatch[data-seasonal]').forEach(s => {
     s.style.display = inSeason ? '' : 'none';
   });
-  seasonalGrid.style.display = inSeason ? '' : 'none';
+  // During the event "Default" covers Dark/Light; they come back afterwards
+  document.querySelectorAll('.theme-swatch[data-offseason]').forEach(s => {
+    s.style.display = inSeason ? 'none' : '';
+  });
 
   const current = document.documentElement.getAttribute('data-theme');
-  if (!inSeason && SEASONAL_THEMES.includes(current)) {
-    const prev = localStorage.getItem('ij_theme_prev');
-    applyTheme(BASE_THEMES.includes(prev) ? prev : 'light');
+  if (inSeason) {
+    if (!localStorage.getItem(XMAS_OFF_KEY) && !SEASONAL_THEMES.includes(current)) enterXmas();
+  } else {
+    localStorage.removeItem(XMAS_OFF_KEY); // reset for next year's event
+    if (SEASONAL_THEMES.includes(current)) leaveXmas();
   }
 }
 
@@ -538,31 +741,34 @@ function openArchiveModal() {
 
 function closeArchiveModal() {
   archiveOverlay.classList.remove('visible');
-  document.body.style.overflow = '';
+  syncBodyScrollLock();
 }
 
-historyBtn.addEventListener('click', openArchiveModal);
+historyBtn.addEventListener('click', () => (isPremium ? openArchiveModal() : openPaywall({ source: 'history' })));
 closeArchiveBtn.addEventListener('click', closeArchiveModal);
 closeArchiveBtn2.addEventListener('click', closeArchiveModal);
 archiveOverlay.addEventListener('click', e => { if (e.target === archiveOverlay) closeArchiveModal(); });
 archiveUnlockBtn.addEventListener('click', () => {
   closeArchiveModal();
-  openPremiumModal();
+  openPaywall({ source: 'history' });
 });
 
 /* ── Purchases boot ── */
+// Called only with a successful RevenueCat result (customer info, purchase or restore)
 function onPremiumChange(premium) {
   isPremium = premium;
+  saveCachedPremium(premium);
   renderTimeline(loadEntries());
   refreshPremiumModalState();
 }
 
+refreshPremiumModalState(); // draw the Themes button now from the saved status; RevenueCat updates it later
 initPurchases(onPremiumChange);
 loadPremiumProduct();
 
 /* ── Boot ── */
 const savedTheme = localStorage.getItem('ij_theme');
-applyTheme([...BASE_THEMES, ...SEASONAL_THEMES].includes(savedTheme) ? savedTheme : 'dark');
+applyTheme([...BASE_THEMES, ...SEASONAL_THEMES].includes(savedTheme) ? savedTheme : 'dark', { fromToggle: true });
 refreshSeasonalThemes();
 
 initDate();

@@ -114,6 +114,36 @@
       --font-override: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, Arial, sans-serif;
     }
 
+    [data-theme="paper"] {
+      --bg: #F5EFE4;
+      --text: #2B2420;
+      --muted: #8A7A68;
+      --placeholder: #A8988A;
+      --input-placeholder: #A8988A;
+      --separator: #DDD2C2;
+      --surface: #FBF7F0;
+      --surface-border: #DDD2C2;
+      --accent: #FF3B30;
+      --accent2: #FF3B30;
+      --marker: #FF3B30;
+      --emoji-idle-opacity: 0.35;
+      --emoji-hover: rgba(43, 36, 32, 0.05);
+      --emoji-selected: #E3D8C6;
+      --toggle-bg: #EBE3D5;
+      --font-override: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, Arial, sans-serif;
+    }
+
+    /* Paper popups: warm card instead of the page background */
+    [data-theme="paper"] .modal,
+    [data-theme="paper"] .emoji-panel {
+      background: #FBF7F0;
+      border-color: #DDD2C2;
+    }
+    [data-theme="paper"] .modal { box-shadow: 0 16px 48px rgba(43,36,32,0.14); }
+    [data-theme="paper"] .emoji-panel { box-shadow: 0 8px 24px rgba(43,36,32,0.12); }
+    [data-theme="paper"] .more-btn.open { background: #EBE3D5; }
+    [data-theme="paper"] .cal-day:disabled { color: #C9BCAB; opacity: 1; }
+
     *, *::before, *::after {
       margin: 0;
       padding: 0;
@@ -177,7 +207,7 @@
     .container {
       width: 100%;
       max-width: 450px;
-      padding: 52px 28px 60px;
+      padding: 66px 28px 60px; /* top: clear of the fixed header buttons */
       display: flex;
       flex-direction: column;
       gap: 0;
@@ -427,7 +457,21 @@
     .emoji-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 2px;
+      gap: 6px 2px; /* row gap +4px */
+    }
+
+    /* Opens upward by default; JS flips it downward when it would reach the header buttons */
+    .emoji-panel.open-down {
+      bottom: auto;
+      top: calc(100% + 8px);
+    }
+
+    /* Between the seasonal row and the regular rows: 12px gap + list-style divider */
+    .emoji-grid .emoji-divider {
+      grid-column: 1 / -1;
+      height: 0;
+      border-top: 1px dotted var(--separator);
+      margin: 3px 0; /* + 6px grid row gaps on each side = 12px */
     }
 
     .emoji-grid button {
@@ -622,65 +666,50 @@
     }
 
     .theme-swatch {
-      background: none;
-      border: none;
+      border: 2px solid var(--separator);
+      border-radius: 12px;
+      height: 52px;
       cursor: pointer;
       padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      transition: transform 0.1s;
+      transition: border-color 0.15s, transform 0.1s;
+      position: relative;
+      overflow: hidden;
     }
 
     .theme-swatch:active { transform: scale(0.96); }
 
-    .theme-swatch .swatch-card {
-      display: block;
-      border: 2px solid var(--separator);
-      border-radius: 12px;
-      height: 52px;
-      overflow: hidden;
-      transition: border-color 0.15s;
-    }
-
-    .theme-swatch.selected .swatch-card {
+    .theme-swatch.selected {
       border-color: var(--accent);
     }
 
-    /* Mini preview: data-theme on the preview scopes that theme's real tokens to it */
-    .theme-swatch .swatch-preview {
-      display: flex;
-      align-items: baseline;
-      justify-content: center;
-      gap: 2px;
-      height: 100%;
-      padding-top: 14px;
-      background: var(--bg);
-      font-family: var(--font-override);
-    }
-
-    .theme-swatch .swatch-nu {
-      font-size: 18px;
-      font-weight: 700;
-      line-height: 1;
-      letter-spacing: -0.6px;
-      color: var(--text);
-    }
-
-    .theme-swatch .swatch-dot {
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      background-color: var(--accent2);
-    }
-
     .theme-swatch .swatch-label {
-      font-size: 11px;
+      position: absolute;
+      bottom: 3px;
+      left: 0;
+      right: 0;
+      font-size: 9px;
       letter-spacing: 0.02em;
       text-align: center;
-      color: var(--text);
-      font-family: inherit;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     }
+
+    .theme-swatch[data-swatch="dark"] { background: #121212; }
+    .theme-swatch[data-swatch="dark"] .swatch-label { color: #8E8E93; }
+    .theme-swatch[data-swatch="light"] { background: #F2F2F7; }
+    .theme-swatch[data-swatch="light"] .swatch-label { color: #6C6C70; }
+    .theme-swatch[data-swatch="cyberpunk"] { background: linear-gradient(135deg, #0D0221 55%, #FF2ED1 55%, #00F0FF 100%); }
+    .theme-swatch[data-swatch="cyberpunk"] .swatch-label { color: #F5F0FF; }
+    .theme-swatch[data-swatch="neon"] { background: linear-gradient(135deg, #0A0A0A 55%, #39FF14 55%, #FF10F0 100%); }
+    .theme-swatch[data-swatch="neon"] .swatch-label { color: #EFFFEF; }
+    .theme-swatch[data-swatch="deepblue"] { background: linear-gradient(135deg, #0A1128 55%, #4361EE 55%, #4CC9F0 100%); }
+    .theme-swatch[data-swatch="deepblue"] .swatch-label { color: #E8ECFB; }
+    .theme-swatch[data-swatch="paper"] { background: linear-gradient(135deg, #F5EFE4 55%, #E3D8C6 55%, #B8A68E 100%); }
+    .theme-swatch[data-swatch="paper"] .swatch-label { color: #6B5D4F; }
+    .theme-swatch[data-swatch="xmas"] { background: linear-gradient(135deg, #0F2A1D 55%, #E63946 55%, #F4EBD9 100%); }
+    .theme-swatch[data-swatch="xmas"] .swatch-label,
+    .theme-swatch[data-swatch="xmas"] .swatch-badge { color: #F4EBD9; }
+    .theme-swatch[data-swatch="default"] { background: linear-gradient(135deg, #121212 50%, #F2F2F7 50%); }
+    .theme-swatch[data-swatch="default"] .swatch-label { color: #8E8E93; }
 
     .theme-locked-hint {
       font-size: 11px;
@@ -692,8 +721,7 @@
     /* ── Seasonal decorations (Snow / Christmas). Static — no animation. ── */
     /* Hat is sized/placed relative to the logo width W: % width/left and % margins resolve against W.
        --hat-drop lowers it from the top of the logo box onto the top of the "n". */
-    .day-block { --hat-drop: 19px; }
-    .theme-swatch .swatch-logo { --hat-drop: 6px; }
+    .day-block { --hat-drop: 18.5px; }
 
     .logo-hat {
       display: none;
@@ -703,7 +731,7 @@
       left: -10%;
       top: 0;
       margin-top: calc(-16% + var(--hat-drop, 0px));
-      transform: rotate(-26deg);
+      transform: rotate(-28.5deg);
       transform-origin: 70% 80%;
       pointer-events: none;
     }
@@ -723,47 +751,46 @@
       display: block;
       position: fixed;
       left: -8%;
-      bottom: -2%;
+      bottom: calc(-2% - 5px);
       width: 116%;
       height: auto;
-      z-index: -1;
+      /* In front of the log so text slides behind the snow while scrolling (never drawn over it);
+         below the emoji panel (50), top buttons (100) and modals (200). */
+      z-index: 10;
+      pointer-events: none;
       filter: drop-shadow(0 -4px 10px rgba(30,40,60,0.08));
     }
 
-    /* Keep the last entry and "Copy today's log" clear of the snow bank (snow height = 116vw × 50/170) */
+    /* Snow stays below all content: at the end of the scroll, "Copy today's log" must sit fully
+       above the snow bank. Padding = full snow image height (116vw × 50/170, ignoring the -2% offset
+       so it never comes up short) + 16px breathing room. */
     [data-theme="snow"] .container {
-      padding-bottom: calc(116vw * 50 / 170);
+      padding-bottom: calc(116vw * 50 / 170 + 16px);
     }
 
     [data-theme="christmas"] .christmas-lights {
       display: block;
       position: fixed;
       left: 0;
-      bottom: env(safe-area-inset-bottom);
+      bottom: calc(env(safe-area-inset-bottom) - 2px);
       width: 100%;
       height: auto;
       z-index: -1;
     }
 
-    /* Keep the last entry and "Copy today's log" clear of the lights (lights height = 100vw × 64/400) */
+    /* Keep the last entry and "Copy today's log" clear of the lights (lights height = 100vw × 64/400, raised 3px) */
     [data-theme="christmas"] .container {
-      padding-bottom: calc(100vw * 64 / 400 + 24px);
-    }
-
-    .theme-swatch .swatch-logo {
-      position: relative;
-      display: inline-flex;
-      align-items: baseline;
-      gap: 2px;
+      padding-bottom: calc(100vw * 64 / 400 + 3px + 24px);
     }
 
     .theme-swatch .swatch-badge {
-      font-size: 8px;
-      font-weight: 600;
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      font-size: 7px;
+      font-weight: 700;
       letter-spacing: 0.06em;
-      text-align: center;
-      color: var(--muted);
-      margin-top: -4px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     .seasonal-grid {
@@ -803,6 +830,181 @@
     }
 
     /* ── Show older logs button ── */
+    /* Locked "N earlier entries today" row (free users) — styled as the last list row */
+    .locked-row {
+      width: 100%;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 0;
+    }
+    .locked-row-text {
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.4;
+      color: var(--muted);
+    }
+    .locked-row-icon {
+      flex-shrink: 0;
+      color: var(--muted);
+      display: flex;
+    }
+    .locked-row-icon svg {
+      width: 13px;
+      height: 13px;
+      display: block;
+    }
+
+    /* After the locked row: 24px, then the footer's single divider */
+    .recap.after-locked {
+      margin-top: 24px;
+    }
+
+    /* ── Paywall ── */
+    .paywall-overlay { z-index: 210; } /* above the Themes popup it can be opened from */
+
+    /* Compact paywall. 4/8pt spacing; blocks use one-sided margins so gaps are exact. */
+    .modal.paywall {
+      padding: 24px;
+      max-height: calc(100vh - 48px);
+      max-height: calc(100dvh - 48px);
+    }
+
+    .paywall .paywall-title {
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0;
+      line-height: 1.2;
+      color: var(--muted);
+      margin: 0 0 20px;          /* brand → headline */
+    }
+    .pw-logo {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 2px;
+      /* Lowercase "nu" scaled so its x-height matches the cap height of "P" in "Premium"
+         (SF: cap 0.705em / x-height 0.54em ≈ 1.3) */
+      font-size: 1.3em;
+      line-height: 1;
+    }
+    .pw-logo-dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: var(--accent2);
+    }
+
+    .paywall .pw-headline {
+      font-size: 22px;
+      font-weight: 600;
+      line-height: 1.25;
+      letter-spacing: -0.3px;
+      color: var(--text);
+      margin: 0;
+    }
+    .pw-subtitle {
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.4;
+      color: var(--muted);
+      margin: 8px 0 0;           /* headline → subtitle */
+    }
+
+    .pw-benefits {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin: 24px 0 32px;       /* subtitle → benefits, benefits → button */
+    }
+    .pw-benefits li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 400;
+      line-height: 1.3;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .pw-benefits li span { opacity: 0.85; }
+    .pw-benefits svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      color: var(--muted);
+    }
+
+    .paywall .modal-cta {
+      height: 48px;
+      padding: 0 16px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .pw-note {
+      font-size: 13px;
+      line-height: 1.3;
+      color: var(--muted);
+      text-align: center;
+      margin: 12px 0 0;          /* button → note */
+    }
+
+    /* Each link gets a ~41px tall touch area; margins offset its padding so visual gaps stay 32px / 24px */
+    .pw-links {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      line-height: 1;
+      color: var(--muted);
+      opacity: 0.7;
+      margin: 18px 0 -14px;      /* 18 + 14px link padding = 32px visual gap; -14 keeps 24px bottom */
+    }
+    .pw-link {
+      background: none;
+      border: none;
+      color: inherit;
+      font-size: 13px;
+      font-family: inherit;
+      line-height: 1;
+      cursor: pointer;
+      padding: 14px 10px;
+      transition: color 0.15s;
+    }
+    .pw-link:hover { color: var(--text); }
+
+    /* Lock on premium swatches in the Themes popup (free users) */
+    .theme-swatch .swatch-lock {
+      display: none;
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      width: 11px;
+      height: 11px;
+      color: rgba(255, 255, 255, 0.85);
+    }
+    .theme-swatch[data-swatch="paper"] .swatch-lock { color: #6B5D4F; }
+    .theme-swatch .swatch-lock svg { width: 100%; height: 100%; display: block; }
+    .themes-locked .theme-swatch[data-premium] .swatch-lock { display: block; }
+
+    .modal-context {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+
     .show-older-btn {
       display: block;
       width: 100%;
@@ -978,46 +1180,42 @@
   <button class="premium-btn" id="premiumBtn" aria-label="Premium features"></button>
 
   <!-- Premium Modal -->
-  <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-label="nu. Premium">
+  <!-- Themes popup (everyone). Premium themes are locked for free users and open the paywall. -->
+  <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-label="Themes">
     <div class="modal">
-      <div class="modal-brand" id="premiumTitle">nu. premium 🔒</div>
-
-      <!-- Locked state: purchase CTA -->
-      <div id="premiumLocked">
-        <div class="modal-price-line" id="modalPriceLine">
-          One-time purchase for lifetime access &nbsp;<strong id="modalPrice">…</strong>
-        </div>
-        <ul class="modal-features">
-          <li>Archive and view past logs with history view.</li>
-          <li>Unlock premium minimalist themes.</li>
-        </ul>
-        <!-- Seasonal themes: free for everyone in December -->
-        <div class="theme-grid seasonal-grid" id="seasonalGrid" style="display:none">
-          <button class="theme-swatch" data-swatch="snow" data-seasonal aria-label="Snow theme"><span class="swatch-card"><span class="swatch-preview" data-theme="snow"><span class="swatch-logo"><span class="swatch-nu">nu</span><span class="swatch-dot"></span><img class="logo-hat logo-hat-snow" src="seasonal/santa-hat-snow.svg" alt=""></span></span></span><span class="swatch-label">Snow</span><span class="swatch-badge">FREE IN DEC</span></button>
-          <button class="theme-swatch" data-swatch="christmas" data-seasonal aria-label="Christmas theme"><span class="swatch-card"><span class="swatch-preview" data-theme="christmas"><span class="swatch-logo"><span class="swatch-nu">nu</span><span class="swatch-dot"></span><img class="logo-hat logo-hat-christmas" src="seasonal/santa-hat-christmas.svg" alt=""></span></span></span><span class="swatch-label">Christmas</span><span class="swatch-badge">FREE IN DEC</span></button>
-        </div>
-        <div class="modal-actions">
-          <button class="modal-cta" id="unlockBtn">Unlock Premium</button>
-          <button class="modal-secondary" id="restoreBtn">Restore Purchases</button>
-          <button class="modal-close" id="closeModalBtn">Close</button>
-        </div>
-      </div>
-
-      <!-- Unlocked state: theme picker -->
-      <div id="premiumUnlocked" style="display:none">
-        <div class="modal-price-line">Premium unlocked. Pick a theme:</div>
+      <div class="modal-brand" id="premiumTitle">Themes</div>
+      <div id="premiumUnlocked">
+        <div class="modal-price-line" id="themesSubtitle">Pick a theme:</div>
         <div class="theme-grid" id="themeGrid">
-          <button class="theme-swatch" data-swatch="snow" data-seasonal aria-label="Snow theme" style="display:none"><span class="swatch-card"><span class="swatch-preview" data-theme="snow"><span class="swatch-logo"><span class="swatch-nu">nu</span><span class="swatch-dot"></span><img class="logo-hat logo-hat-snow" src="seasonal/santa-hat-snow.svg" alt=""></span></span></span><span class="swatch-label">Snow</span><span class="swatch-badge">FREE IN DEC</span></button>
-          <button class="theme-swatch" data-swatch="christmas" data-seasonal aria-label="Christmas theme" style="display:none"><span class="swatch-card"><span class="swatch-preview" data-theme="christmas"><span class="swatch-logo"><span class="swatch-nu">nu</span><span class="swatch-dot"></span><img class="logo-hat logo-hat-christmas" src="seasonal/santa-hat-christmas.svg" alt=""></span></span></span><span class="swatch-label">Christmas</span><span class="swatch-badge">FREE IN DEC</span></button>
-          <button class="theme-swatch" data-swatch="dark" aria-label="Dark theme"><span class="swatch-card"><span class="swatch-preview" data-theme="dark"><span class="swatch-nu">nu</span><span class="swatch-dot"></span></span></span><span class="swatch-label">Dark</span></button>
-          <button class="theme-swatch" data-swatch="light" aria-label="Light theme"><span class="swatch-card"><span class="swatch-preview" data-theme="light"><span class="swatch-nu">nu</span><span class="swatch-dot"></span></span></span><span class="swatch-label">Light</span></button>
-          <button class="theme-swatch" data-swatch="cyberpunk" aria-label="Cyberpunk theme"><span class="swatch-card"><span class="swatch-preview" data-theme="cyberpunk"><span class="swatch-nu">nu</span><span class="swatch-dot"></span></span></span><span class="swatch-label">Cyberpunk</span></button>
-          <button class="theme-swatch" data-swatch="neon" aria-label="Neon theme"><span class="swatch-card"><span class="swatch-preview" data-theme="neon"><span class="swatch-nu">nu</span><span class="swatch-dot"></span></span></span><span class="swatch-label">Neon</span></button>
-          <button class="theme-swatch" data-swatch="deepblue" aria-label="Deep Blue theme"><span class="swatch-card"><span class="swatch-preview" data-theme="deepblue"><span class="swatch-nu">nu</span><span class="swatch-dot"></span></span></span><span class="swatch-label">Deep Blue</span></button>
+          <button class="theme-swatch" data-swatch="xmas" data-seasonal aria-label="Christmas theme" style="display:none"><span class="swatch-label">Christmas</span><span class="swatch-badge">FREE</span></button>
+          <button class="theme-swatch" data-swatch="default" data-seasonal aria-label="Default theme" style="display:none"><span class="swatch-label">Default</span></button>
+          <button class="theme-swatch" data-swatch="dark" data-offseason aria-label="Dark theme"><span class="swatch-label">Dark</span></button>
+          <button class="theme-swatch" data-swatch="light" data-offseason aria-label="Light theme"><span class="swatch-label">Light</span></button>
+          <button class="theme-swatch" data-swatch="cyberpunk" data-premium aria-label="Cyberpunk theme"><span class="swatch-label">Cyberpunk</span><span class="swatch-lock" aria-hidden="true"></span></button>
+          <button class="theme-swatch" data-swatch="neon" data-premium aria-label="Neon theme"><span class="swatch-label">Neon</span><span class="swatch-lock" aria-hidden="true"></span></button>
+          <button class="theme-swatch" data-swatch="deepblue" data-premium aria-label="Deep Blue theme"><span class="swatch-label">Deep Blue</span><span class="swatch-lock" aria-hidden="true"></span></button>
+          <button class="theme-swatch" data-swatch="paper" data-premium aria-label="Paper theme"><span class="swatch-label">Paper</span><span class="swatch-lock" aria-hidden="true"></span></button>
         </div>
         <div class="modal-actions">
           <button class="modal-close" id="closeModalBtn2">Close</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Premium paywall -->
+  <div class="modal-overlay paywall-overlay" id="paywallOverlay" role="dialog" aria-modal="true" aria-label="nu. Premium">
+    <div class="modal paywall">
+      <div class="modal-brand paywall-title"><span class="pw-logo">nu<span class="pw-logo-dot"></span></span> Premium</div>
+      <div class="pw-headline" id="paywallHeadline"></div>
+      <p class="pw-subtitle" id="paywallSubtitle"></p>
+      <ul class="pw-benefits" id="paywallBenefits"></ul>
+      <button class="modal-cta" id="unlockBtn" disabled>Unlock Premium</button>
+      <p class="pw-note">One-time payment. No subscription, ever.</p>
+      <div class="pw-links">
+        <button class="pw-link" id="restoreBtn">Restore Purchases</button>
+        <span class="pw-sep" aria-hidden="true">·</span>
+        <button class="pw-link" id="closePaywallBtn">Close</button>
       </div>
     </div>
   </div>
