@@ -719,20 +719,18 @@
     }
 
     /* ── Seasonal decorations (Snow / Christmas). Static — no animation. ── */
-    /* Hat is sized/placed relative to the logo width W: % width/left and % margins resolve against W.
-       --hat-drop lowers it from the top of the logo box onto the top of the "n". */
-    .day-block { --hat-drop: 18.5px; }
-
+    /* Hat is sized/placed relative to the logo width W (% width/left and % margins all resolve against W),
+       matched to the reference mock: brim resting on the top-left corner of the "n", tilted 29° left. */
     .logo-hat {
       display: none;
       position: absolute;
-      width: 34%;
+      width: 32.6%;
       height: auto;
-      left: -10%;
+      left: -6.67%;
       top: 0;
-      margin-top: calc(-16% + var(--hat-drop, 0px));
-      transform: rotate(-28.5deg);
-      transform-origin: 70% 80%;
+      margin-top: 12.26%;
+      transform: rotate(-29deg);
+      transform-origin: 50% 50%;
       pointer-events: none;
     }
 
