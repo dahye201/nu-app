@@ -7,7 +7,8 @@ import {
   purchasePremium,
   restorePurchases,
 } from './purchaseService.js';
-import { initReminders, afterEntryAdded } from './reminders.js';
+import { initReminders, afterEntryAdded, refreshReminderPremium, openCustomReminderTimes } from './reminders.js';
+import { initBackup } from './backup.js';
 
 const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTHS = ['January','February','March','April','May','June',
@@ -397,21 +398,30 @@ const ICON_CHECK = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" s
   <path d="M4.5 10.5l3.5 3.5 7.5-8"/>
 </svg>`;
 
-// One fixed message wherever the paywall opens; `source` only decides what happens after purchase.
+// Same message wherever the paywall opens, except the reminders lock, which leads with its feature.
+// `source` also decides what happens after purchase.
 const PAYWALL_HEADLINE = 'Look back at any day.';
 const PAYWALL_SUBTITLE = 'Your memories, always within reach.';
+const BENEFIT_REMINDER_TIMES = 'Pick your own reminder times';
 const PAYWALL_BENEFITS = [
   'Browse any past day',
   'Access all your daily entries',
   'Unlock exclusive themes',
+  BENEFIT_REMINDER_TIMES,
 ];
-const PAYWALL_SOURCES = ['older_entries', 'history', 'themes', 'default'];
+const PAYWALL_BY_SOURCE = {
+  reminders: {
+    headline: 'Nudges at\nyour times.',
+    benefits: [BENEFIT_REMINDER_TIMES, ...PAYWALL_BENEFITS.filter(b => b !== BENEFIT_REMINDER_TIMES)],
+  },
+};
+const PAYWALL_SOURCES = ['older_entries', 'history', 'themes', 'reminders', 'default'];
 
 let paywallContext = { source: 'default', theme: null };
 
 /**
  * Open the paywall.
- * source: 'older_entries' | 'history' | 'themes' | 'default'
+ * source: 'older_entries' | 'history' | 'themes' | 'reminders' | 'default'
  * theme:  premium theme ID that was tapped (themes only)
  */
 function openPaywall({ source = 'default', theme = null } = {}) {
@@ -419,9 +429,10 @@ function openPaywall({ source = 'default', theme = null } = {}) {
   if (!PREMIUM_THEMES.includes(theme)) theme = null;
   paywallContext = { source, theme };
 
-  paywallHeadline.textContent = PAYWALL_HEADLINE;
-  document.getElementById('paywallSubtitle').textContent = PAYWALL_SUBTITLE;
-  paywallBenefits.replaceChildren(...PAYWALL_BENEFITS.map(text => {
+  const copy = PAYWALL_BY_SOURCE[source] || {};
+  paywallHeadline.textContent = copy.headline || PAYWALL_HEADLINE;
+  document.getElementById('paywallSubtitle').textContent = copy.subtitle || PAYWALL_SUBTITLE;
+  paywallBenefits.replaceChildren(...(copy.benefits || PAYWALL_BENEFITS).map(text => {
     const li = document.createElement('li');
     li.innerHTML = `${ICON_CHECK}<span></span>`;
     li.querySelector('span').textContent = text;
@@ -445,6 +456,8 @@ function afterUnlock() {
     openArchiveModal();
   } else if (source === 'themes' && theme) {
     chooseTheme(theme);
+  } else if (source === 'reminders') {
+    openCustomReminderTimes();
   }
   // older_entries: onPremiumChange(true) already re-rendered today's full list
 }
@@ -762,6 +775,7 @@ function onPremiumChange(premium) {
   saveCachedPremium(premium);
   renderTimeline(loadEntries());
   refreshPremiumModalState();
+  refreshReminderPremium();
 }
 
 refreshPremiumModalState(); // draw the Themes button now from the saved status; RevenueCat updates it later
@@ -780,10 +794,22 @@ renderTimeline(_boot);
 renderRecap(_boot);
 input.focus();
 
+initBackup({
+  syncBodyScrollLock,
+  tap,
+  onEntriesChanged() {
+    const entries = loadEntries();
+    renderTimeline(entries);
+    renderRecap(entries);
+  },
+});
+
 initReminders({
   dayKey,
   loadEntriesForKey,
   syncBodyScrollLock,
+  isPremium: () => isPremium,
+  openPaywall: () => openPaywall({ source: 'reminders' }),
   onTodayChanged() {
     const entries = loadEntries();
     renderTimeline(entries);

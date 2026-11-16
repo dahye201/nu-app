@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import UserNotifications
 import Capacitor
 
@@ -261,7 +262,9 @@ public class NuRemindersPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "schedule", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "cancelAll", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "takePending", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "ackPending", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "ackPending", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getTimeFormat", returnType: CAPPluginReturnPromise)
     ]
 
     @objc func getPermission(_ call: CAPPluginCall) {
@@ -301,6 +304,26 @@ public class NuRemindersPlugin: CAPPlugin, CAPBridgedPlugin {
         let entries: [JSObject] = PendingEntryStore.shared.all().map { ["id": $0.id, "text": $0.text, "ts": $0.ts] }
         let skipDay = UserDefaults.standard.string(forKey: NuReminders.skipDayKey)
         call.resolve(["entries": entries, "skipDay": skipDay ?? NSNull()])
+    }
+
+    /// Whether the user's iPhone shows 12-hour time ("3 PM") or 24-hour ("15:00").
+    @objc func getTimeFormat(_ call: CAPPluginCall) {
+        let pattern = DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: .current) ?? ""
+        call.resolve(["hour12": pattern.contains("a")])
+    }
+
+    /// Opens nu.'s notification settings in the iPhone Settings app (nu.'s settings page before iOS 16).
+    @objc func openSettings(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            let target: String
+            if #available(iOS 16.0, *) {
+                target = UIApplication.openNotificationSettingsURLString
+            } else {
+                target = UIApplication.openSettingsURLString
+            }
+            guard let url = URL(string: target) else { call.resolve(); return }
+            UIApplication.shared.open(url) { _ in call.resolve() }
+        }
     }
 
     @objc func ackPending(_ call: CAPPluginCall) {

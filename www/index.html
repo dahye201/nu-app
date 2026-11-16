@@ -661,6 +661,45 @@
 
     .modal-close:hover { color: var(--text); }
 
+    /* ── Back up & restore ── */
+    .backup-row {
+      margin-top: 20px;
+    }
+
+    .recap[style*="none"] + .backup-row {
+      margin-top: 36px;
+    }
+
+    .backup-summary {
+      font-size: 13px;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+
+    /* The real file field covers the button so a tap opens the iOS file picker */
+    .backup-import {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      border-radius: 12px;
+      border: 1px solid var(--separator);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .backup-import input {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
     /* ── Reminders (opt-in + settings) ── */
     .rm-options {
       display: flex;
@@ -688,11 +727,6 @@
     .rm-option[aria-checked="true"] {
       border-color: var(--accent);
       background: var(--emoji-hover);
-    }
-
-    .rm-option-meta {
-      color: var(--muted);
-      font-size: 13px;
     }
 
     .rm-head {
@@ -800,6 +834,91 @@
       line-height: 1.5;
       color: var(--muted);
       margin-bottom: 16px;
+    }
+
+    .rm-option-lock {
+      width: 16px;
+      height: 16px;
+      color: var(--muted);
+    }
+
+    .rm-option:not(.is-locked) .rm-option-lock { display: none; }
+
+    .rm-modes { margin-bottom: 12px; }
+
+    /* "Pick my own times" on the opt-in sheet, with a Premium tag for free users */
+    .rm-custom-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 44px;
+      border: none;
+      background: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .rm-premium {
+      display: none;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 7px 2px 5px;
+      border-radius: 10px;
+      background: var(--toggle-bg);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .rm-premium .rm-option-lock { width: 12px; height: 12px; }
+    .rm-custom-btn.is-locked .rm-premium { display: inline-flex; }
+
+    .rm-ask .rm-ask-times { margin: 0 0 16px; }
+
+    /* These set their own display, which would otherwise override [hidden] */
+    .rm-times[hidden],
+    .rm-chip[hidden] { display: none; }
+
+    /* Compact enough to fit an iPhone SE with the time chips open */
+    .modal.rm-ask { padding: 28px 24px 18px; }
+    .rm-ask .modal-brand { margin-bottom: 10px; }
+    .rm-ask .modal-price-line { margin-bottom: 18px; }
+    .rm-ask .modal-actions { gap: 0; }
+
+    /* iPhone SE (1st gen) and other short screens */
+    @media (max-height: 600px) {
+      #remindAskOverlay { padding: 12px; }
+      .modal.rm-ask { max-height: calc(100vh - 24px); padding: 22px 20px 12px; }
+      .rm-ask .modal-brand { font-size: 18px; margin-bottom: 8px; }
+      .rm-ask .modal-price-line { margin-bottom: 14px; }
+      .rm-ask .rm-ask-times { margin-bottom: 12px; }
+    }
+
+    .rm-footnote {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 2px;
+    }
+
+    .rm-blocked { margin-bottom: 16px; }
+    .rm-blocked .rm-note { margin-bottom: 10px; }
+
+    .rm-settings-link {
+      min-height: 44px;
+      padding: 0 16px;
+      border-radius: 12px;
+      border: none;
+      background: var(--text);
+      color: var(--bg);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
     }
 
     .rm-disabled {
@@ -1058,6 +1177,7 @@
       letter-spacing: -0.3px;
       color: var(--text);
       margin: 0;
+      white-space: pre-line;
     }
     .pw-subtitle {
       font-size: 14px;
@@ -1361,18 +1481,18 @@
 
   <!-- Reminders opt-in (shown once, after an entry) -->
   <div class="modal-overlay" id="remindAskOverlay" role="dialog" aria-modal="true" aria-label="Reminders">
-    <div class="modal">
-      <div class="modal-brand">Want a gentle nudge?</div>
-      <div class="modal-price-line">nu. can check in now and then to ask what you just finished. No streaks, no guilt.</div>
-      <div class="rm-options" role="radiogroup" aria-label="How often">
-        <button class="rm-option" role="radio" aria-checked="false" data-plan="once"><span>Once a day</span><span class="rm-option-meta">15:00</span></button>
-        <button class="rm-option" role="radio" aria-checked="true" data-plan="twice"><span>Twice a day</span><span class="rm-option-meta">11:00 · 16:00</span></button>
-        <button class="rm-option" role="radio" aria-checked="false" data-plan="custom"><span>I'll pick my own times</span><span class="rm-option-meta" aria-hidden="true">›</span></button>
+    <div class="modal rm-ask">
+      <div class="modal-brand">Nice, first one logged.</div>
+      <div class="modal-price-line">Want a gentle nudge for the next one? We'll check in twice a day, at random moments. You can reply right from the notification.</div>
+      <div class="rm-times rm-ask-times" id="remindAskTimes" hidden>
+        <label class="rm-chip rm-add" id="remindAskAddChip">+ Add<input type="time" id="remindAskAddTime" aria-label="Add a reminder time"></label>
       </div>
       <div class="modal-actions">
-        <button class="modal-cta" id="remindAskOn">Turn on reminders</button>
+        <button class="modal-cta" id="remindAskOn">Turn on</button>
+        <button class="rm-custom-btn" id="remindAskCustom" aria-controls="remindAskTimes" aria-expanded="false"><span>Pick my own times</span><span class="rm-premium"><svg class="rm-option-lock" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9"/></svg>Premium</span></button>
         <button class="modal-close" id="remindAskLater">Not now</button>
       </div>
+      <p class="rm-footnote">No streaks. No guilt. Turn off anytime.</p>
     </div>
   </div>
 
@@ -1383,16 +1503,55 @@
         <div class="modal-brand">Reminders</div>
         <button class="rm-switch" id="remindEnabled" role="switch" aria-checked="false" aria-label="Reminders"></button>
       </div>
-      <p class="rm-note" id="remindNote" hidden></p>
+      <div class="rm-blocked" id="remindBlocked" hidden>
+        <p class="rm-note" id="remindNote"></p>
+        <button class="rm-settings-link" id="remindOpenSettings" hidden>Enable in Settings</button>
+      </div>
       <div id="remindBody">
         <div class="rm-label">When</div>
-        <div class="rm-times" id="remindTimes">
+        <div class="rm-options rm-modes" id="remindModes" role="radiogroup" aria-label="Reminder times">
+          <button class="rm-option" role="radio" aria-checked="true" data-mode="random"><span>Random (2 a day)</span></button>
+          <button class="rm-option" role="radio" aria-checked="false" data-mode="custom" aria-label="My times"><span>My times</span><svg class="rm-option-lock" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9"/></svg></button>
+        </div>
+        <!-- My times (Premium): edit freely -->
+        <div class="rm-times" id="remindTimes" hidden>
           <label class="rm-chip rm-add" id="remindAddChip">+ Add time<input type="time" id="remindAddTime" aria-label="Add a reminder time"></label>
         </div>
-        <p class="rm-hint">Up to 3 a day. Skipped if you logged something in the last 2 hours. Reply right from the notification to log without opening nu.</p>
+        <p class="rm-hint" id="remindHint"></p>
       </div>
       <div class="modal-actions">
         <button class="modal-close" id="remindClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Back up & restore -->
+  <div class="modal-overlay" id="backupOverlay" role="dialog" aria-modal="true" aria-label="Back up and restore">
+    <div class="modal">
+      <div id="backupMain">
+        <div class="modal-brand">Back up &amp; restore</div>
+        <div class="modal-price-line">Your entries live only on this phone. Save a copy as a file in Files, iCloud Drive or a message to yourself, and import it on a new phone.</div>
+        <p class="backup-summary" id="backupSummary"></p>
+        <div class="modal-actions">
+          <button class="modal-cta" id="backupExport">Export all entries</button>
+          <label class="backup-import">Import a backup<input type="file" id="backupFile" accept=".json,application/json"></label>
+          <button class="modal-close" id="backupClose">Close</button>
+        </div>
+      </div>
+      <div id="backupConfirm" hidden>
+        <div class="modal-brand" id="backupConfirmTitle"></div>
+        <div class="modal-price-line" id="backupConfirmText"></div>
+        <div class="modal-actions">
+          <button class="modal-cta" id="backupImportConfirm">Import</button>
+          <button class="modal-close" id="backupImportCancel">Cancel</button>
+        </div>
+      </div>
+      <div id="backupDone" hidden>
+        <div class="modal-brand" id="backupDoneTitle"></div>
+        <div class="modal-price-line" id="backupDoneText"></div>
+        <div class="modal-actions">
+          <button class="modal-close" id="backupDoneBtn">Done</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1492,6 +1651,11 @@
     <!-- Recap -->
     <div class="recap" id="recap" style="display:none">
       <button class="copy-btn" id="copyBtn">Copy today's log</button>
+    </div>
+
+    <!-- Always visible, so a new phone with no entries can still import -->
+    <div class="backup-row">
+      <button class="copy-btn" id="backupBtn">Back up &amp; restore</button>
     </div>
   </div>
 
