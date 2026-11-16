@@ -169,7 +169,8 @@
 
     /* ── Top-right button row ── */
     .theme-toggle,
-    .history-btn {
+    .history-btn,
+    .remind-btn {
       position: fixed;
       top: calc(env(safe-area-inset-top) + 16px);
       z-index: 100;
@@ -188,15 +189,18 @@
 
     .theme-toggle { right: 24px; }
     .history-btn { right: 68px; }
+    .remind-btn { right: 112px; }
 
     .theme-toggle:hover,
-    .history-btn:hover {
+    .history-btn:hover,
+    .remind-btn:hover {
       background: var(--emoji-selected);
       color: var(--text);
     }
 
     .theme-toggle svg,
     .history-btn svg,
+    .remind-btn svg,
     .premium-btn svg {
       width: 18px;
       height: 18px;
@@ -497,7 +501,7 @@
     .premium-btn {
       position: fixed;
       top: calc(env(safe-area-inset-top) + 16px);
-      right: 112px;
+      right: 156px;
       z-index: 100;
       background: var(--toggle-bg);
       border: none;
@@ -656,6 +660,152 @@
     }
 
     .modal-close:hover { color: var(--text); }
+
+    /* ── Reminders (opt-in + settings) ── */
+    .rm-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .rm-option {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-height: 52px;
+      padding: 0 16px;
+      border-radius: 14px;
+      border: 1.5px solid var(--separator);
+      background: transparent;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 15px;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .rm-option[aria-checked="true"] {
+      border-color: var(--accent);
+      background: var(--emoji-hover);
+    }
+
+    .rm-option-meta {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .rm-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .rm-head .modal-brand { margin-bottom: 0; }
+
+    .rm-switch {
+      position: relative;
+      flex-shrink: 0;
+      width: 51px;
+      height: 31px;
+      border-radius: 16px;
+      border: none;
+      padding: 0;
+      background: var(--separator);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .rm-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 27px;
+      height: 27px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+      transition: transform 0.2s;
+    }
+
+    .rm-switch[aria-checked="true"] { background: var(--accent); }
+    .rm-switch[aria-checked="true"]::after { transform: translateX(20px); }
+
+    .rm-note {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .rm-label {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .rm-times {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .rm-chip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 0 14px;
+      border-radius: 22px;
+      border: none;
+      background: var(--toggle-bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .rm-chip:disabled { cursor: default; }
+
+    .rm-chip svg {
+      width: 12px;
+      height: 12px;
+      color: var(--muted);
+    }
+
+    .rm-add {
+      background: transparent;
+      border: 1px dashed var(--separator);
+      color: var(--muted);
+    }
+
+    /* The real time field covers the chip so a tap opens the iOS time wheel */
+    .rm-add input {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .rm-hint {
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .rm-disabled {
+      opacity: 0.4;
+      pointer-events: none;
+    }
 
     /* ── Theme picker (inside premium modal, once unlocked) ── */
     .theme-grid {
@@ -1177,6 +1327,12 @@
       <line x1="13" y1="2" x2="13" y2="5"/>
     </svg>
   </button>
+  <button class="remind-btn" id="remindBtn" aria-label="Reminders" title="Reminders">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5.5 8.5a4.5 4.5 0 0 1 9 0c0 4 1.5 5.5 1.5 5.5H4s1.5-1.5 1.5-5.5z"/>
+      <path d="M8.5 16.5a1.6 1.6 0 0 0 3 0"/>
+    </svg>
+  </button>
   <button class="premium-btn" id="premiumBtn" aria-label="Premium features"></button>
 
   <!-- Premium Modal -->
@@ -1199,6 +1355,44 @@
         <div class="modal-actions">
           <button class="modal-close" id="closeModalBtn2">Close</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reminders opt-in (shown once, after an entry) -->
+  <div class="modal-overlay" id="remindAskOverlay" role="dialog" aria-modal="true" aria-label="Reminders">
+    <div class="modal">
+      <div class="modal-brand">Want a gentle nudge?</div>
+      <div class="modal-price-line">nu. can check in now and then to ask what you just finished. No streaks, no guilt.</div>
+      <div class="rm-options" role="radiogroup" aria-label="How often">
+        <button class="rm-option" role="radio" aria-checked="false" data-plan="once"><span>Once a day</span><span class="rm-option-meta">15:00</span></button>
+        <button class="rm-option" role="radio" aria-checked="true" data-plan="twice"><span>Twice a day</span><span class="rm-option-meta">11:00 · 16:00</span></button>
+        <button class="rm-option" role="radio" aria-checked="false" data-plan="custom"><span>I'll pick my own times</span><span class="rm-option-meta" aria-hidden="true">›</span></button>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-cta" id="remindAskOn">Turn on reminders</button>
+        <button class="modal-close" id="remindAskLater">Not now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reminders settings -->
+  <div class="modal-overlay" id="remindOverlay" role="dialog" aria-modal="true" aria-label="Reminders">
+    <div class="modal">
+      <div class="rm-head">
+        <div class="modal-brand">Reminders</div>
+        <button class="rm-switch" id="remindEnabled" role="switch" aria-checked="false" aria-label="Reminders"></button>
+      </div>
+      <p class="rm-note" id="remindNote" hidden></p>
+      <div id="remindBody">
+        <div class="rm-label">When</div>
+        <div class="rm-times" id="remindTimes">
+          <label class="rm-chip rm-add" id="remindAddChip">+ Add time<input type="time" id="remindAddTime" aria-label="Add a reminder time"></label>
+        </div>
+        <p class="rm-hint">Up to 3 a day. Skipped if you logged something in the last 2 hours. Reply right from the notification to log without opening nu.</p>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-close" id="remindClose">Close</button>
       </div>
     </div>
   </div>

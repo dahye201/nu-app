@@ -5,6 +5,8 @@ const config: CapacitorConfig = {
   appName: 'nu.',
   webDir: 'www',
   ios: {
+    // nu. handles notifications itself (NuReminders.swift), set up before the web view loads
+    handleApplicationNotifications: false,
     contentInset: 'never',
     preferredContentMode: 'mobile',
     backgroundColor: '#121212',

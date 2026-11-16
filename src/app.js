@@ -7,6 +7,7 @@ import {
   purchasePremium,
   restorePurchases,
 } from './purchaseService.js';
+import { initReminders, afterEntryAdded } from './reminders.js';
 
 const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTHS = ['January','February','March','April','May','June',
@@ -232,6 +233,7 @@ function addEntry(text) {
   document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
   input.focus();
   tap();
+  afterEntryAdded();
 }
 
 /* ── Auto-resize textarea ── */
@@ -313,7 +315,7 @@ function renderEmojiGrid() {
 renderEmojiGrid();
 
 // The fixed top-right buttons (Themes, calendar, theme toggle)
-const HEADER_BUTTON_IDS = ['premiumBtn', 'historyBtn', 'themeToggle'];
+const HEADER_BUTTON_IDS = ['premiumBtn', 'remindBtn', 'historyBtn', 'themeToggle'];
 const HEADER_GAP = 12;
 const PANEL_OFFSET = 8; // matches the CSS calc(100% + 8px)
 
@@ -777,3 +779,14 @@ const _boot = loadEntries();
 renderTimeline(_boot);
 renderRecap(_boot);
 input.focus();
+
+initReminders({
+  dayKey,
+  loadEntriesForKey,
+  syncBodyScrollLock,
+  onTodayChanged() {
+    const entries = loadEntries();
+    renderTimeline(entries);
+    renderRecap(entries);
+  },
+});
