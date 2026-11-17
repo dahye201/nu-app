@@ -928,6 +928,12 @@
     }
     .rm-hint p[hidden] { display: none; }
     .rm-hint .rm-next { color: var(--text); font-weight: 500; }
+    .rm-hint .rm-paused { display: flex; align-items: center; gap: 6px; color: var(--text); font-weight: 500; }
+    .rm-hint .rm-paused[hidden] { display: none; }
+    .rm-paused button {
+      background: none; border: 0; padding: 4px 0; margin: -4px 0;
+      font: inherit; font-weight: 600; color: var(--accent); cursor: pointer;
+    }
 
     /* Bell in the header: filled while reminders are on */
     .remind-btn.is-on svg g path:first-child { fill: currentColor; }
@@ -1601,6 +1607,7 @@
           <label class="rm-chip rm-add" id="remindAddChip">+ Add time<input type="time" id="remindAddTime" aria-label="Add a reminder time"></label>
         </div>
         <div class="rm-hint" id="remindHint">
+          <p class="rm-paused" id="remindPaused" hidden><span>Paused for today</span><span aria-hidden="true">·</span><button type="button" id="remindResume">Resume</button></p>
           <p class="rm-next" id="remindNext" hidden></p>
           <p id="remindHintWhen"></p>
           <p id="remindHintSkip">Skipped if you logged in the last hour.</p>

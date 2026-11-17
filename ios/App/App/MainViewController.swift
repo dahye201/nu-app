@@ -5,6 +5,7 @@ import Capacitor
 class MainViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(NuRemindersPlugin())
+        bridge?.registerPluginInstance(NuJournalPlugin())
         // nu. stays the notification delegate even if the bridge touched it while loading.
         NuReminders.shared.install()
     }

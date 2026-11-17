@@ -10,6 +10,7 @@ npm-debug.log*
 
 node_modules
 www/bundle.js
+tests/.out
 *.local
 
 # iOS build artifacts

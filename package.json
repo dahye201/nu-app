@@ -6,7 +6,8 @@
   "scripts": {
     "build": "esbuild src/app.js --bundle --outfile=www/bundle.js",
     "watch": "esbuild src/app.js --bundle --outfile=www/bundle.js --watch",
-    "sync": "npm run build && npx cap sync ios"
+    "sync": "npm run build && npx cap sync ios",
+    "test": "node tests/run.mjs"
   },
   "dependencies": {
     "@capacitor/core": "^8.3.4",
@@ -19,6 +20,7 @@
   "devDependencies": {
     "@capacitor/cli": "^8.2.0",
     "esbuild": "^0.24.0",
+    "puppeteer-core": "^23.11.1",
     "typescript": "^5.9.3"
   }
 }

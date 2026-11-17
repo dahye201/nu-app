@@ -7,7 +7,8 @@ import {
   purchasePremium,
   restorePurchases,
 } from './purchaseService.js';
-import { initReminders, afterEntryAdded, refreshReminderPremium, openCustomReminderTimes, syncReminders } from './reminders.js';
+import { restoreJournalIfEmpty, noteJournalChanged } from './journalMirror.js';
+import { initReminders, adoptRestoredReminders, afterEntryAdded, refreshReminderPremium, openCustomReminderTimes, syncReminders } from './reminders.js';
 import { initBackup } from './backup.js';
 import { initEntryActions, buildEntryRow, commitEdit, isEditing } from './entryActions.js';
 
@@ -113,6 +114,7 @@ function loadEntries() {
 
 function saveEntries(entries) {
   localStorage.setItem(todayKey(), JSON.stringify(entries));
+  noteJournalChanged();
 }
 
 /* ── Render ── */
@@ -519,6 +521,7 @@ function applyTheme(theme, { fromToggle = false } = {}) {
   document.documentElement.setAttribute('data-theme', theme);
   themeToggle.innerHTML = isLightTheme(theme) ? ICON_MOON : ICON_SUN;
   localStorage.setItem('ij_theme', theme);
+  noteJournalChanged();
   const seasonal = SEASONAL_THEMES.includes(theme);
   // After tapping "Default", highlight only that card, not also the theme it restored
   const viaDefault = !seasonal && isSeasonalWindow() && localStorage.getItem(XMAS_OFF_KEY) === 'default';
@@ -784,6 +787,8 @@ renderTimeline(_boot);
 renderRecap(_boot);
 input.focus();
 
+
+
 // Edit / delete entries (today's list and History)
 const dateFromKey = key => { const [, y, m, d] = key.split('_').map(Number); return new Date(y, m - 1, d); };
 initEntryActions({
@@ -808,6 +813,7 @@ initBackup({
   syncBodyScrollLock,
   tap,
   onEntriesChanged() {
+    noteJournalChanged();
     const entries = loadEntries();
     renderTimeline(entries);
     renderRecap(entries);
@@ -820,9 +826,29 @@ initReminders({
   syncBodyScrollLock,
   isPremium: () => isPremium,
   openPaywall: () => openPaywall({ source: 'reminders' }),
+  tap,
   onTodayChanged() {
     const entries = loadEntries();
     renderTimeline(entries);
     renderRecap(entries);
+  },
+});
+
+// If WebKit cleared localStorage, bring the journal and settings back from the native copy
+// (see journalMirror.js). Only what was missing at launch is restored.
+restoreJournalIfEmpty({
+  async beforeMirror({ entries, settings }) {
+    if (settings.includes('ij_theme') || settings.includes('ij_xmas_off')) {
+      const theme = localStorage.getItem('ij_theme');
+      applyTheme([...BASE_THEMES, ...SEASONAL_THEMES].includes(theme) ? theme : 'dark', { fromToggle: true });
+      refreshSeasonalThemes();
+    }
+    if (entries) {
+      const today = loadEntries();
+      renderTimeline(today);
+      renderRecap(today);
+    }
+    if (settings.includes('nu_reminders')) await adoptRestoredReminders();
+    else if (entries) syncReminders();
   },
 });

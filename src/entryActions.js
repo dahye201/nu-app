@@ -1,6 +1,7 @@
 // Edit (tap) and delete (swipe left, with Undo) for log entries, in today's list and in History.
 // Timestamps are never edited: an entry keeps its `time`, `id` and `pid`; only text and mood change.
 import { rememberDeletedReply, forgetDeletedReply } from './deletedReplies.js';
+import { noteJournalChanged } from './journalMirror.js';
 
 const ACTION_W = 88;          // width of the red "Delete" action
 const GAP = 16;               // space between the entry (mood emoji) and the action
@@ -17,6 +18,7 @@ let toastTimer = null;
 function saveList(key, list) {
   if (list.length) localStorage.setItem(key, JSON.stringify(list));
   else localStorage.removeItem(key);
+  noteJournalChanged();
 }
 
 function updateEntry(key, id, changes) {

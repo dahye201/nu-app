@@ -267,7 +267,8 @@ public class NuRemindersPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "takePending", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "ackPending", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "getTimeFormat", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "getTimeFormat", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "clearSkipDay", returnType: CAPPluginReturnPromise)
     ]
 
     @objc func getPermission(_ call: CAPPluginCall) {
@@ -309,6 +310,12 @@ public class NuRemindersPlugin: CAPPlugin, CAPBridgedPlugin {
         call.resolve(["entries": entries, "skipDay": skipDay ?? NSNull()])
     }
 
+    /// Undoes "Not today" (Resume, or the user changed reminder settings); the web app reschedules.
+    @objc func clearSkipDay(_ call: CAPPluginCall) {
+        UserDefaults.standard.removeObject(forKey: NuReminders.skipDayKey)
+        call.resolve()
+    }
+
     /// Whether the user's iPhone shows 12-hour time ("3 PM") or 24-hour ("15:00").
     @objc func getTimeFormat(_ call: CAPPluginCall) {
         let pattern = DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: .current) ?? ""
@@ -333,5 +340,52 @@ public class NuRemindersPlugin: CAPPlugin, CAPBridgedPlugin {
         let ids = call.getArray("ids", String.self) ?? []
         PendingEntryStore.shared.acknowledge(ids: Set(ids))
         call.resolve()
+    }
+}
+
+/// Native copy of the journal (every day's entries), kept in Application Support so it is part of
+/// the iPhone's iCloud/computer backup and survives WebKit clearing the web view's localStorage.
+/// The web app writes it after every change and reads it on launch only when localStorage is empty.
+/// Separate from the notification reply queue (PendingEntryStore), which is unchanged.
+@objc(NuJournalPlugin)
+public class NuJournalPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "NuJournalPlugin"
+    public let jsName = "NuJournal"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "save", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "load", returnType: CAPPluginReturnPromise)
+    ]
+
+    private static let queue = DispatchQueue(label: "nu.journal-mirror")
+
+    private static var fileURL: URL {
+        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        return dir.appendingPathComponent("nu-journal.json")
+    }
+
+    /// `data`: the journal as a JSON string. Written atomically, so a crash leaves the previous copy.
+    @objc func save(_ call: CAPPluginCall) {
+        guard let text = call.getString("data"), let data = text.data(using: .utf8) else {
+            call.reject("missing data"); return
+        }
+        Self.queue.async {
+            do {
+                let url = Self.fileURL
+                try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+                call.resolve()
+            } catch {
+                NSLog("nu: could not write journal copy (\(error))")
+                call.reject("write failed")
+            }
+        }
+    }
+
+    /// The saved journal JSON string, or null if there is none.
+    @objc func load(_ call: CAPPluginCall) {
+        Self.queue.async {
+            let text = (try? Data(contentsOf: Self.fileURL)).flatMap { String(data: $0, encoding: .utf8) }
+            call.resolve(["data": text ?? NSNull()])
+        }
     }
 }

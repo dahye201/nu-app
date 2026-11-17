@@ -1,6 +1,14 @@
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { noteJournalChanged } from './journalMirror.js';
+
+const LAST_EXPORT_KEY = 'nu_last_export';
+
+function rememberExport(date) {
+  localStorage.setItem(LAST_EXPORT_KEY, date.toISOString());
+  noteJournalChanged();
+}
 
 // Backup file: { app: "nu.", format: 1, exportedAt, days: { "YYYY-MM-DD": [entry, …] } }
 const FORMAT = 1;
@@ -165,6 +173,7 @@ async function exportBackup() {
     const { uri } = await Filesystem.writeFile({ path: filename, data: json, directory: Directory.Cache, encoding: Encoding.UTF8 });
     try {
       await Share.share({ files: [uri], dialogTitle: 'Save your nu. backup' });
+      rememberExport(now);
     } catch {
       // Share sheet dismissed: nothing to do
     }
@@ -177,6 +186,7 @@ async function exportBackup() {
   link.download = filename;
   link.click();
   URL.revokeObjectURL(link.href);
+  rememberExport(now);
 }
 
 async function pickedFile(event) {

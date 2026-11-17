@@ -1,5 +1,6 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { isDeletedReply } from './deletedReplies.js';
+import { noteJournalChanged } from './journalMirror.js';
 
 // Native side: ios/App/App/NuReminders.swift
 const NuReminders = registerPlugin('NuReminders');
@@ -18,6 +19,11 @@ const RANDOM_START = 10 * 60;   // minutes after midnight
 const RANDOM_END = 20 * 60;
 const RANDOM_MIN_GAP = 3 * 60;
 const SEED_KEY = 'nu_reminders_seed';
+// When "Not today" is undone, random check-ins for the rest of that day are drawn from now
+// until RANDOM_END; with less than this left, they start again tomorrow.
+const RESUME_KEY = 'nu_reminders_resumed';   // { day: "YYYY-MM-DD", at: ms }
+const RESUME_MIN_WINDOW = 60;                // minutes
+const RESUME_LEAD = 15;                      // minutes: no check-in right on top of tapping Resume
 
 // Check-in lines (notification body only), picked by the local time the reminder fires.
 // Same pool for random (free) and custom (Premium) times.
@@ -111,6 +117,21 @@ export function loadReminderSettings() {
 
 function saveReminderSettings(settings) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  noteJournalChanged();
+}
+
+/**
+ * Reminder settings were just restored from the native copy. If they were on but iOS no longer
+ * allows notifications, they stay off (the 🔔 screen then shows the iOS state, e.g. "Enable in
+ * Settings"); otherwise they are rescheduled. Mode and times are kept either way.
+ */
+export async function adoptRestoredReminders() {
+  const settings = loadReminderSettings();
+  if (settings.enabled && (await permission()) !== 'granted') {
+    saveReminderSettings({ ...settings, enabled: false });
+  }
+  await syncReminders();
+  if ($('remindOverlay').classList.contains('visible')) renderSettings();
 }
 
 // Small seeded PRNG (mulberry32) and string hash (FNV-1a)
@@ -148,6 +169,28 @@ export function randomTimesFor(day, seed) {
   const span = RANDOM_END - RANDOM_START - RANDOM_MIN_GAP;
   const [a, b] = [Math.floor(rand() * (span + 1)), Math.floor(rand() * (span + 1))].sort((x, y) => x - y);
   return [toHHMM(RANDOM_START + a), toHHMM(RANDOM_START + b + RANDOM_MIN_GAP)];
+}
+
+/**
+ * Random times for the rest of a day on which "Not today" was undone at `resumedAt` (ms):
+ * drawn between 15 minutes later and 20:00. Two (3 hours apart) if there is room, else one;
+ * none if less than an hour is left. Seeded by the resume moment, so rescheduling keeps the same times.
+ */
+export function resumedRandomTimes(resumedAt, seed) {
+  const at = new Date(resumedAt);
+  const nowMin = at.getHours() * 60 + at.getMinutes();
+  if (RANDOM_END - Math.max(RANDOM_START, nowMin) < RESUME_MIN_WINDOW) return [];
+  const start = Math.max(RANDOM_START, nowMin + RESUME_LEAD);
+  const window = RANDOM_END - start;
+  const rand = seededRandom(hashString(`${seed}:resume:${resumedAt}`));
+  if (window < RANDOM_MIN_GAP) return [toHHMM(start + Math.floor(rand() * (window + 1)))];
+  const span = window - RANDOM_MIN_GAP;
+  const [a, b] = [Math.floor(rand() * (span + 1)), Math.floor(rand() * (span + 1))].sort((x, y) => x - y);
+  return [toHHMM(start + a), toHHMM(start + b + RANDOM_MIN_GAP)];
+}
+
+function loadResumed() {
+  try { return JSON.parse(localStorage.getItem(RESUME_KEY)) || null; } catch { return null; }
 }
 
 /**
@@ -196,7 +239,7 @@ function usesCustomTimes(settings) {
   return settings.mode === 'custom' && deps.isPremium();
 }
 
-let deps = null;     // { dayKey, loadEntriesForKey, onTodayChanged, syncBodyScrollLock, isPremium, openPaywall }
+let deps = null;     // { dayKey, loadEntriesForKey, onTodayChanged, syncBodyScrollLock, isPremium, openPaywall, tap }
 let skipDay = null;
 let chain = Promise.resolve();
 const enqueue = fn => (chain = chain.then(fn).catch(err => console.error('reminders:', err)));
@@ -224,6 +267,7 @@ async function mergePendingReplies() {
     localStorage.setItem(key, JSON.stringify(list)); // throws on failure, so nothing is acknowledged
     if (key === todayKey) todayChanged = true;
   }
+  noteJournalChanged();
   await NuReminders.ackPending({ ids: entries.map(e => e.id) });
   if (todayChanged) deps.onTodayChanged();
 }
@@ -237,7 +281,9 @@ async function reschedule() {
   const lastEntryAt = today.reduce((max, e) => Math.max(max, Number(e.id) || 0), 0);
   const seed = reminderSeed();
   const custom = usesCustomTimes(settings);
-  const timesFor = custom ? () => settings.times : day => randomTimesFor(day, seed);
+  const resumed = loadResumed();
+  const timesFor = custom ? () => settings.times
+    : day => (resumed && resumed.day === dayString(day) ? resumedRandomTimes(resumed.at, seed) : randomTimesFor(day, seed));
   const now = new Date();
   const sent = loadSent(now.getTime());
   const reminders = buildSchedule({ now, timesFor, lastEntryAt: custom ? 0 : lastEntryAt, skipDay, sent, seed });
@@ -261,10 +307,26 @@ function formatNext(at, now = new Date()) {
   return `${day} at ${formatTime(`${pad(when.getHours())}:${pad(when.getMinutes())}`)}`;
 }
 
-/** Settings: "Next reminder: Today at 4 PM", while reminders are really on. */
+const pausedToday = () => !!skipDay && skipDay === dayString(new Date());
+
+/**
+ * Undo "Not today": from the Resume button, or when the user changes reminder settings
+ * (adding a time, switching mode, turning reminders on), which says they want check-ins today.
+ * Call inside enqueue() so it runs in order with syncing.
+ */
+async function resumeToday() {
+  if (!pausedToday()) return;
+  await NuReminders.clearSkipDay();
+  skipDay = null;
+  localStorage.setItem(RESUME_KEY, JSON.stringify({ day: dayString(new Date()), at: Date.now() }));
+}
+
+/** Settings: "Paused for today · Resume" while paused, and "Next reminder: Today at 4 PM" while really on. */
 async function refreshNext() {
+  if (!deps) return;
   const el = $('remindNext');
   const on = loadReminderSettings().enabled && (await permission()) === 'granted';
+  $('remindPaused').hidden = !(on && pausedToday());
   const at = on ? nextReminderAt() : null;
   el.hidden = !at;
   if (at) el.textContent = `Next reminder: ${formatNext(at)}`;
@@ -277,11 +339,15 @@ async function refreshBell() {
   $('remindBtn').setAttribute('aria-label', on ? 'Reminders, on' : 'Reminders, off');
 }
 
-/** Pull in notification replies, then rebuild the upcoming check-ins. */
-export function syncReminders() {
+/**
+ * Pull in notification replies, then rebuild the upcoming check-ins.
+ * `resume`: the user just changed reminder settings, so "Not today" is undone first.
+ */
+export function syncReminders({ resume = false } = {}) {
   if (!native) return chain;
   return enqueue(async () => {
     await mergePendingReplies();
+    if (resume) await resumeToday();
     await reschedule();
     await refreshBell();
     await refreshNext();
@@ -411,15 +477,17 @@ async function renderSettings() {
 
 function chooseMode(mode) {
   if (mode === 'custom' && !deps.isPremium()) { deps.openPaywall(); return; }
+  const changed = loadReminderSettings().mode !== mode;
   saveReminderSettings({ ...loadReminderSettings(), mode });
   renderSettings();
-  syncReminders();
+  syncReminders({ resume: changed });
 }
 
 function updateTimes(times) {
+  const added = times.length > loadReminderSettings().times.length;
   saveReminderSettings({ ...loadReminderSettings(), times });
   renderSettings();
-  syncReminders();
+  syncReminders({ resume: added });
 }
 
 async function toggleEnabled() {
@@ -433,7 +501,7 @@ async function toggleEnabled() {
   }
   saveReminderSettings({ ...settings, enabled, asked: true });
   await renderSettings();
-  syncReminders();
+  syncReminders({ resume: enabled });
 }
 
 function commitAddedTime() {
@@ -473,6 +541,7 @@ export function initReminders(options) {
   $('remindEnabled').addEventListener('click', toggleEnabled);
   $('remindModes').querySelectorAll('.rm-option').forEach(btn => btn.addEventListener('click', () => chooseMode(btn.dataset.mode)));
   $('remindOpenSettings').addEventListener('click', () => NuReminders.openSettings());
+  $('remindResume').addEventListener('click', () => { deps.tap(); syncReminders({ resume: true }); });
   $('remindClose').addEventListener('click', () => closeOverlay(overlay));
   overlay.addEventListener('click', e => { if (e.target === overlay) closeOverlay(overlay); });
   // iOS commits the time wheel on "Done", which blurs the field
