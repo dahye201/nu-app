@@ -8,7 +8,9 @@ const native = Capacitor.isNativePlatform();
 const SETTINGS_KEY = 'nu_reminders';
 const MAX_TIMES = 3;
 const SCHEDULE_DAYS = 7;
-const SKIP_AFTER_ENTRY_MS = 2 * 60 * 60 * 1000;
+// Random check-ins are skipped within an hour after an entry (the user is already on track).
+// Times the user picked always fire: they are anchors, and skipping them silently feels broken.
+const SKIP_AFTER_ENTRY_MS = 60 * 60 * 1000;
 
 // Free: two random check-ins a day. Premium: up to MAX_TIMES fixed times of the user's choosing.
 const DEFAULT_CUSTOM_TIMES = ['11:00', '16:00'];
@@ -152,7 +154,7 @@ export function randomTimesFor(day, seed) {
  * Check-ins for the next `days` days, as [{ at, body }] with `at` in ms. `timesFor(day)` gives
  * that day's times ("HH:MM"); `times` is a shortcut for the same times every day.
  * Leaves out times already past, the day the user tapped "Not today" (`skipDay`, "YYYY-MM-DD"),
- * and anything within 2 hours after the latest entry (`lastEntryAt`, ms).
+ * and anything within an hour after the latest entry (`lastEntryAt`, ms; pass 0 to never skip).
  * `sent` is the lines already delivered ({ at, body }), so the first new ones don't repeat them.
  */
 export function buildSchedule({ now, times = [], timesFor = () => times, lastEntryAt = 0, skipDay = null, days = SCHEDULE_DAYS, sent = [], seed = '' }) {
@@ -234,12 +236,38 @@ async function reschedule() {
   const today = deps.loadEntriesForKey(deps.dayKey(new Date()));
   const lastEntryAt = today.reduce((max, e) => Math.max(max, Number(e.id) || 0), 0);
   const seed = reminderSeed();
-  const timesFor = usesCustomTimes(settings) ? () => settings.times : day => randomTimesFor(day, seed);
+  const custom = usesCustomTimes(settings);
+  const timesFor = custom ? () => settings.times : day => randomTimesFor(day, seed);
   const now = new Date();
   const sent = loadSent(now.getTime());
-  const reminders = buildSchedule({ now, timesFor, lastEntryAt, skipDay, sent, seed });
+  const reminders = buildSchedule({ now, timesFor, lastEntryAt: custom ? 0 : lastEntryAt, skipDay, sent, seed });
   await NuReminders.schedule({ reminders });
   saveScheduled(sent, reminders);
+}
+
+/** The next check-in that is scheduled, in ms, or null. */
+function nextReminderAt(now = Date.now()) {
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem(SENT_KEY)) || []; } catch { list = []; }
+  const upcoming = list.map(r => r.at).filter(at => at > now).sort((a, b) => a - b);
+  return upcoming.length ? upcoming[0] : null;
+}
+
+/** "Today at 4 PM", "Tomorrow at 11:00", "Thursday at 9:30 AM" */
+function formatNext(at, now = new Date()) {
+  const when = new Date(at);
+  const days = Math.round((new Date(when.getFullYear(), when.getMonth(), when.getDate()) - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000);
+  const day = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : when.toLocaleDateString('en-US', { weekday: 'long' });
+  return `${day} at ${formatTime(`${pad(when.getHours())}:${pad(when.getMinutes())}`)}`;
+}
+
+/** Settings: "Next reminder: Today at 4 PM", while reminders are really on. */
+async function refreshNext() {
+  const el = $('remindNext');
+  const on = loadReminderSettings().enabled && (await permission()) === 'granted';
+  const at = on ? nextReminderAt() : null;
+  el.hidden = !at;
+  if (at) el.textContent = `Next reminder: ${formatNext(at)}`;
 }
 
 /** Header bell: filled while reminders are really on (switched on and allowed by iOS). */
@@ -256,6 +284,7 @@ export function syncReminders() {
     await mergePendingReplies();
     await reschedule();
     await refreshBell();
+    await refreshNext();
   });
 }
 
@@ -370,12 +399,14 @@ async function renderSettings() {
   lockCustomButton($('remindModes').querySelector('[data-mode="custom"]'), 'At my times');
 
   $('remindTimes').hidden = !custom;
-  if (custom) renderTimeChips($('remindTimes'), $('remindAddChip'), settings.times, { onChange: updateTimes });
+  if (custom) renderTimeChips($('remindTimes'), $('remindAddChip'), settings.times, { format: t => formatTime(t), onChange: updateTimes });
 
   // First line: the random window, or (At my times) the chips above take its place
   $('remindHintWhen').hidden = custom;
   $('remindHintWhen').textContent = `Twice a day, between ${formatTime(toHHMM(RANDOM_START))} and ${formatTime(toHHMM(RANDOM_END))}.`;
+  $('remindHintSkip').hidden = custom; // picked times always fire
   refreshBell();
+  refreshNext();
 }
 
 function chooseMode(mode) {

@@ -927,6 +927,7 @@
       margin-bottom: 16px;
     }
     .rm-hint p[hidden] { display: none; }
+    .rm-hint .rm-next { color: var(--text); font-weight: 500; }
 
     /* Bell in the header: filled while reminders are on */
     .remind-btn.is-on svg g path:first-child { fill: currentColor; }
@@ -938,10 +939,12 @@
     }
 
     .rm-option:not(.is-locked) .rm-option-lock { display: none; }
+    /* Premium users own it: no "Premium" pill */
+    .rm-option:not(.is-locked) .rm-tag { display: none; }
 
     .rm-modes { margin-bottom: 12px; }
 
-    /* "Free" / "Premium" pill on the reminder options. The lock inside shows only while locked. */
+    /* "Premium" pill on "At my times", shown only while locked. */
     .rm-tag {
       display: inline-flex;
       align-items: center;
@@ -1598,8 +1601,9 @@
           <label class="rm-chip rm-add" id="remindAddChip">+ Add time<input type="time" id="remindAddTime" aria-label="Add a reminder time"></label>
         </div>
         <div class="rm-hint" id="remindHint">
+          <p class="rm-next" id="remindNext" hidden></p>
           <p id="remindHintWhen"></p>
-          <p>Skipped if you logged in the last 2 hours.</p>
+          <p id="remindHintSkip">Skipped if you logged in the last hour.</p>
           <p>Reply right from the notification.</p>
         </div>
       </div>

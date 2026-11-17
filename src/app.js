@@ -538,14 +538,17 @@ function enterXmas() {
   applyTheme(xmasVariant(current));
 }
 
-/** Back to the user's regular theme. */
-function leaveXmas() {
+/**
+ * Back to a regular theme. "Default" (plain = true) always means plain Dark/Light, since it stands in
+ * for those two during the event. When the event ends, the remembered regular theme comes back.
+ */
+function leaveXmas({ plain = false } = {}) {
   const current = document.documentElement.getAttribute('data-theme');
   const wantLight = isLightTheme(current); // Snow → light side, Christmas → dark side
   const prev = localStorage.getItem('ij_theme_prev');
   // Return to the remembered theme only if it matches the light/dark side the user is on now
   // (they may have flipped Snow ↔ Christmas since) and they can still use it.
-  const prevOk = BASE_THEMES.includes(prev)
+  const prevOk = !plain && BASE_THEMES.includes(prev)
     && isLightTheme(prev) === wantLight
     && (isPremium || !PREMIUM_THEMES.includes(prev));
   applyTheme(prevOk ? prev : (wantLight ? 'light' : 'dark'));
@@ -571,7 +574,7 @@ document.querySelectorAll('.theme-swatch').forEach(btn => {
       enterXmas();
     } else if (key === 'default') {
       localStorage.setItem(XMAS_OFF_KEY, 'default');
-      leaveXmas();
+      leaveXmas({ plain: true });
     } else {
       chooseTheme(key);
     }
