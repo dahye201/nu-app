@@ -168,12 +168,21 @@
     }
 
     /* ── Top-right button row ── */
+    /* Header buttons, left → right: History, Reminders, light/dark, Themes. One fixed row, 8px apart,
+       so the Themes pill (its width depends on the label) can sit at the right edge. */
+    .header-actions {
+      position: fixed;
+      top: calc(env(safe-area-inset-top) + 16px);
+      right: 24px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .theme-toggle,
     .history-btn,
     .remind-btn {
-      position: fixed;
-      top: calc(env(safe-area-inset-top) + 16px);
-      z-index: 100;
       background: var(--toggle-bg);
       border: none;
       border-radius: 50%;
@@ -187,9 +196,6 @@
       transition: background 0.2s, color 0.2s;
     }
 
-    .theme-toggle { right: 24px; }
-    .history-btn { right: 68px; }
-    .remind-btn { right: 112px; }
 
     .theme-toggle:hover,
     .history-btn:hover,
@@ -202,8 +208,8 @@
     .history-btn svg,
     .remind-btn svg,
     .premium-btn svg {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       display: block;
     }
 
@@ -374,6 +380,99 @@
       margin-top: 1px;
     }
 
+    /* ── Edit / delete ── */
+    /* Each entry sits in a row that clips it; swiping left slides it over a red Delete action */
+    .log-row {
+      position: relative;
+      overflow: hidden;
+    }
+    .log-row .log-entry {
+      position: relative;
+      touch-action: pan-y;         /* vertical scrolling stays native; horizontal drags swipe */
+      -webkit-user-select: none;
+      user-select: none;
+      cursor: text;
+    }
+    .log-row.editing .log-entry { -webkit-user-select: text; user-select: text; }
+    .log-delete {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 0;
+      overflow: hidden;
+      border: none;
+      padding: 0;
+      background: #FF3B30;
+      color: #FFFFFF;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .log-row:not(.swiping) .log-delete { visibility: hidden; }
+
+    .log-row.editing .log-text {
+      outline: none;
+      caret-color: var(--accent);
+      -webkit-user-modify: read-write-plaintext-only;
+    }
+    .log-mood.log-mood-empty {
+      color: var(--muted);
+      font-size: 15px;
+      opacity: 0.6;
+    }
+    .log-row.editing .log-mood { cursor: pointer; }
+
+    /* Mood picker while editing: the emoji panel, fixed next to the entry */
+    .emoji-panel.entry-mood-panel {
+      position: fixed;
+      bottom: auto;
+      right: auto;
+      z-index: 260;
+    }
+
+    /* "Entry deleted · Undo": above everything, including popups and the snow bank */
+    .entry-toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(env(safe-area-inset-bottom) + 20px);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border-radius: 20px;
+      background: var(--text);
+      color: var(--bg);
+      font-size: 14px;
+      white-space: nowrap;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      transform: translate(-50%, 16px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .entry-toast.visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+      pointer-events: auto;
+    }
+    .entry-toast button {
+      background: none;
+      border: none;
+      padding: 4px 2px;
+      color: inherit;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    /* Clear of the snow bank and the Christmas lights */
+    [data-theme="snow"] .entry-toast { bottom: calc(116vw * 50 / 170 - 2vh + 12px); }
+    [data-theme="christmas"] .entry-toast { bottom: calc(env(safe-area-inset-bottom) + 100vw * 64 / 400 + 8px); }
+
     .log-divider {
       border: none;
       border-top: 1px dotted var(--separator);
@@ -383,7 +482,7 @@
       padding: 8px 0;
     }
 
-    #archiveDayList .log-entry + .log-entry {
+    #archiveDayList .log-row + .log-row {
       border-top: 1px dotted var(--separator);
     }
 
@@ -499,10 +598,6 @@
 
     /* ── Premium button ── */
     .premium-btn {
-      position: fixed;
-      top: calc(env(safe-area-inset-top) + 16px);
-      right: 156px;
-      z-index: 100;
       background: var(--toggle-bg);
       border: none;
       border-radius: 20px;
@@ -662,13 +757,6 @@
     .modal-close:hover { color: var(--text); }
 
     /* ── Back up & restore ── */
-    .backup-row {
-      margin-top: 20px;
-    }
-
-    .recap[style*="none"] + .backup-row {
-      margin-top: 36px;
-    }
 
     .backup-summary {
       font-size: 13px;
@@ -830,11 +918,18 @@
     }
 
     .rm-hint {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
       font-size: 12px;
-      line-height: 1.5;
+      line-height: 1.4;
       color: var(--muted);
       margin-bottom: 16px;
     }
+    .rm-hint p[hidden] { display: none; }
+
+    /* Bell in the header: filled while reminders are on */
+    .remind-btn.is-on svg g path:first-child { fill: currentColor; }
 
     .rm-option-lock {
       width: 16px;
@@ -846,26 +941,13 @@
 
     .rm-modes { margin-bottom: 12px; }
 
-    /* "Pick my own times" on the opt-in sheet, with a Premium tag for free users */
-    .rm-custom-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      min-height: 44px;
-      border: none;
-      background: none;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 14px;
-      cursor: pointer;
-    }
-
-    .rm-premium {
-      display: none;
+    /* "Free" / "Premium" pill on the reminder options. The lock inside shows only while locked. */
+    .rm-tag {
+      display: inline-flex;
       align-items: center;
       gap: 3px;
-      padding: 2px 7px 2px 5px;
+      flex-shrink: 0;
+      padding: 2px 7px;
       border-radius: 10px;
       background: var(--toggle-bg);
       color: var(--muted);
@@ -874,10 +956,8 @@
       letter-spacing: 0.02em;
     }
 
-    .rm-premium .rm-option-lock { width: 12px; height: 12px; }
-    .rm-custom-btn.is-locked .rm-premium { display: inline-flex; }
-
-    .rm-ask .rm-ask-times { margin: 0 0 16px; }
+    .rm-tag .rm-option-lock { width: 12px; height: 12px; }
+    .rm-option.is-locked .rm-tag { padding-left: 5px; }
 
     /* These set their own display, which would otherwise override [hidden] */
     .rm-times[hidden],
@@ -988,20 +1068,18 @@
     }
 
     /* ── Seasonal decorations (Snow / Christmas). Static — no animation. ── */
-    /* Hat is sized/placed relative to the logo width W: % width/left and % margins resolve against W.
-       --hat-drop lowers it from the top of the logo box onto the top of the "n". */
-    .day-block { --hat-drop: 18.5px; }
-
+    /* Hat is sized/placed relative to the logo width W (% width/left and % margins all resolve against W),
+       matched to the reference mock: brim resting on the top-left corner of the "n", tilted 29° left. */
     .logo-hat {
       display: none;
       position: absolute;
-      width: 34%;
+      width: 32.6%;
       height: auto;
-      left: -10%;
+      left: -6.67%;
       top: 0;
-      margin-top: calc(-16% + var(--hat-drop, 0px));
-      transform: rotate(-28.5deg);
-      transform-origin: 70% 80%;
+      margin-top: calc(12.26% - 1.5px);
+      transform: rotate(-29deg);
+      transform-origin: 50% 50%;
       pointer-events: none;
     }
 
@@ -1171,6 +1249,7 @@
     }
 
     .paywall .pw-headline {
+      white-space: pre-line;     /* "See all of today,\nand every day before." breaks where written */
       font-size: 22px;
       font-weight: 600;
       line-height: 1.25;
@@ -1438,22 +1517,27 @@
 </head>
 <body>
 
-  <button class="theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle dark/light mode"></button>
-  <button class="history-btn" id="historyBtn" aria-label="Past days" title="History">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3" y="4" width="14" height="13" rx="2.5"/>
-      <line x1="3" y1="8" x2="17" y2="8"/>
-      <line x1="7" y1="2" x2="7" y2="5"/>
-      <line x1="13" y1="2" x2="13" y2="5"/>
-    </svg>
-  </button>
-  <button class="remind-btn" id="remindBtn" aria-label="Reminders" title="Reminders">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M5.5 8.5a4.5 4.5 0 0 1 9 0c0 4 1.5 5.5 1.5 5.5H4s1.5-1.5 1.5-5.5z"/>
-      <path d="M8.5 16.5a1.6 1.6 0 0 0 3 0"/>
-    </svg>
-  </button>
-  <button class="premium-btn" id="premiumBtn" aria-label="Premium features"></button>
+  <!-- Header buttons, left → right: History, Reminders, light/dark, Themes -->
+  <div class="header-actions">
+    <button class="history-btn" id="historyBtn" aria-label="Past days" title="History">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="14" height="13" rx="2.5"/>
+        <line x1="3" y1="8" x2="17" y2="8"/>
+        <line x1="7" y1="2" x2="7" y2="5"/>
+        <line x1="13" y1="2" x2="13" y2="5"/>
+      </svg>
+    </button>
+    <button class="remind-btn" id="remindBtn" aria-label="Reminders" title="Reminders">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <g transform="translate(10 10) scale(1.07) translate(-10 -10.5)">
+        <path d="M5.5 8.5a4.5 4.5 0 0 1 9 0c0 4 1.5 5.5 1.5 5.5H4s1.5-1.5 1.5-5.5z"/>
+        <path d="M8.5 16.5a1.6 1.6 0 0 0 3 0"/>
+        </g>
+      </svg>
+    </button>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle dark/light mode"></button>
+    <button class="premium-btn" id="premiumBtn" aria-label="Premium features"></button>
+  </div>
 
   <!-- Premium Modal -->
   <!-- Themes popup (everyone). Premium themes are locked for free users and open the paywall. -->
@@ -1483,13 +1567,9 @@
   <div class="modal-overlay" id="remindAskOverlay" role="dialog" aria-modal="true" aria-label="Reminders">
     <div class="modal rm-ask">
       <div class="modal-brand">Nice, first one logged.</div>
-      <div class="modal-price-line">Want a gentle nudge for the next one? We'll check in twice a day, at random moments. You can reply right from the notification.</div>
-      <div class="rm-times rm-ask-times" id="remindAskTimes" hidden>
-        <label class="rm-chip rm-add" id="remindAskAddChip">+ Add<input type="time" id="remindAskAddTime" aria-label="Add a reminder time"></label>
-      </div>
+      <div class="modal-price-line">Want a nudge for the next one?<br>We'll check in twice a day, at random moments.<br>Just reply to the notification to log.</div>
       <div class="modal-actions">
-        <button class="modal-cta" id="remindAskOn">Turn on</button>
-        <button class="rm-custom-btn" id="remindAskCustom" aria-controls="remindAskTimes" aria-expanded="false"><span>Pick my own times</span><span class="rm-premium"><svg class="rm-option-lock" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9"/></svg>Premium</span></button>
+        <button class="modal-cta" id="remindAskOn">Turn on reminders</button>
         <button class="modal-close" id="remindAskLater">Not now</button>
       </div>
       <p class="rm-footnote">No streaks. No guilt. Turn off anytime.</p>
@@ -1510,14 +1590,18 @@
       <div id="remindBody">
         <div class="rm-label">When</div>
         <div class="rm-options rm-modes" id="remindModes" role="radiogroup" aria-label="Reminder times">
-          <button class="rm-option" role="radio" aria-checked="true" data-mode="random"><span>Random (2 a day)</span></button>
-          <button class="rm-option" role="radio" aria-checked="false" data-mode="custom" aria-label="My times"><span>My times</span><svg class="rm-option-lock" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9"/></svg></button>
+          <button class="rm-option" role="radio" aria-checked="true" data-mode="random"><span>Random, twice a day</span></button>
+          <button class="rm-option" role="radio" aria-checked="false" data-mode="custom" aria-label="At my times, Premium"><span>At my times</span><span class="rm-tag"><svg class="rm-option-lock" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9"/></svg>Premium</span></button>
         </div>
         <!-- My times (Premium): edit freely -->
         <div class="rm-times" id="remindTimes" hidden>
           <label class="rm-chip rm-add" id="remindAddChip">+ Add time<input type="time" id="remindAddTime" aria-label="Add a reminder time"></label>
         </div>
-        <p class="rm-hint" id="remindHint"></p>
+        <div class="rm-hint" id="remindHint">
+          <p id="remindHintWhen"></p>
+          <p>Skipped if you logged in the last 2 hours.</p>
+          <p>Reply right from the notification.</p>
+        </div>
       </div>
       <div class="modal-actions">
         <button class="modal-close" id="remindClose">Close</button>
@@ -1600,6 +1684,7 @@
         </div>
         <div id="archiveDayList"></div>
         <div class="modal-actions">
+          <button class="modal-secondary" id="backupBtn">Back up &amp; restore</button>
           <button class="modal-close" id="closeArchiveBtn2">Close</button>
         </div>
       </div>
@@ -1652,11 +1737,10 @@
     <div class="recap" id="recap" style="display:none">
       <button class="copy-btn" id="copyBtn">Copy today's log</button>
     </div>
+  </div>
 
-    <!-- Always visible, so a new phone with no entries can still import -->
-    <div class="backup-row">
-      <button class="copy-btn" id="backupBtn">Back up &amp; restore</button>
-    </div>
+  <div class="entry-toast" id="entryToast" role="status" aria-live="polite">
+    <span>Entry deleted</span><span aria-hidden="true">·</span><button type="button">Undo</button>
   </div>
 
   <script src="bundle.js"></script>

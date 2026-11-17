@@ -7,23 +7,30 @@ import {
   purchasePremium,
   restorePurchases,
 } from './purchaseService.js';
-import { initReminders, afterEntryAdded, refreshReminderPremium, openCustomReminderTimes } from './reminders.js';
+import { initReminders, afterEntryAdded, refreshReminderPremium, openCustomReminderTimes, syncReminders } from './reminders.js';
 import { initBackup } from './backup.js';
+import { initEntryActions, buildEntryRow, commitEdit, isEditing } from './entryActions.js';
 
 const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTHS = ['January','February','March','April','May','June',
                 'July','August','September','October','November','December'];
 
-const ICON_SUN = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+// Header icons are sized to match the calendar (~14–15px of ink in the 18px box).
+// Scaled icons get a compensated stroke so lines stay 1.6 on screen like the others.
+const ICON_SUN = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.84" stroke-linecap="round">
+  <g transform="translate(10 10) scale(0.87) translate(-10 -10)">
   <circle cx="10" cy="10" r="4"/>
   <line x1="10" y1="1.5" x2="10" y2="3.5"/><line x1="10" y1="16.5" x2="10" y2="18.5"/>
   <line x1="1.5" y1="10" x2="3.5" y2="10"/><line x1="16.5" y1="10" x2="18.5" y2="10"/>
   <line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="14.4" y1="14.4" x2="15.8" y2="15.8"/>
   <line x1="4.2" y1="15.8" x2="5.6" y2="14.4"/><line x1="14.4" y1="5.6" x2="15.8" y2="4.2"/>
+  </g>
 </svg>`;
 
+// The crescent's outline spans x 2.5–14.5, y 5.5–17.5 (centre 8.5, 11.5): centred in the box and
+// enlarged 1.25× so the filled shape reads the same size as the outline icons
 const ICON_MOON = `<svg viewBox="0 0 20 20" fill="currentColor">
-  <path d="M14.5 11.5A6 6 0 0 1 8.5 5.5a6 6 0 1 0 6 6z"/>
+  <path d="M14.5 11.5A6 6 0 0 1 8.5 5.5a6 6 0 1 0 6 6z" transform="translate(10 10) scale(1.25) translate(-8.5 -11.5)"/>
 </svg>`;
 
 const ICON_LOCK = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -109,17 +116,12 @@ function saveEntries(entries) {
 }
 
 /* ── Render ── */
-function escapeHtml(str) {
-  return str
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
-}
 
 const LOG_LIMIT = 5;
 
 function renderTimeline(entries) {
+  // An entry is being edited: save it first; saving redraws the list with fresh data
+  if (isEditing()) { commitEdit(); return; }
   timeline.innerHTML = '';
   document.getElementById('recap').classList.remove('after-locked');
 
@@ -137,16 +139,7 @@ function renderTimeline(entries) {
   const hidden  = sorted.length - visible.length;
 
   visible.forEach((entry, i) => {
-    const row = document.createElement('div');
-    row.className = 'log-entry';
-    row.setAttribute('role','listitem');
-
-    row.innerHTML = `
-      <span class="log-time">${entry.time}</span>
-      <span class="log-text">${escapeHtml(entry.text)}</span>
-      ${entry.emoji ? `<span class="log-mood" aria-hidden="true">${entry.emoji}</span>` : ''}
-    `;
-    timeline.appendChild(row);
+    timeline.appendChild(buildEntryRow(todayKey(), entry));
 
     if (i < visible.length - 1) {
       const hr = document.createElement('hr');
@@ -398,24 +391,23 @@ const ICON_CHECK = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" s
   <path d="M4.5 10.5l3.5 3.5 7.5-8"/>
 </svg>`;
 
-// Same message wherever the paywall opens, except the reminders lock, which leads with its feature.
+// Headline, subtitle and the first benefit follow the Premium feature the user tapped.
 // `source` also decides what happens after purchase.
-const PAYWALL_HEADLINE = 'Look back at any day.';
-const PAYWALL_SUBTITLE = 'Your memories, always within reach.';
-const BENEFIT_REMINDER_TIMES = 'Pick your own reminder times';
-const PAYWALL_BENEFITS = [
-  'Browse any past day',
-  'Access all your daily entries',
-  'Unlock exclusive themes',
-  BENEFIT_REMINDER_TIMES,
-];
-const PAYWALL_BY_SOURCE = {
-  reminders: {
-    headline: 'Nudges at\nyour times.',
-    benefits: [BENEFIT_REMINDER_TIMES, ...PAYWALL_BENEFITS.filter(b => b !== BENEFIT_REMINDER_TIMES)],
-  },
+const BENEFITS = {
+  reminders: 'Choose your own reminder times',
+  history: 'Browse any past day',
+  entries: 'Access all your daily entries',
+  themes: 'Unlock exclusive themes',
 };
-const PAYWALL_SOURCES = ['older_entries', 'history', 'themes', 'reminders', 'default'];
+const BENEFIT_ORDER = ['reminders', 'history', 'entries', 'themes'];
+const PAYWALL_COPY = {
+  reminders:     { headline: 'Reminders on your schedule.', subtitle: 'Nudges at the moments that fit your day.', lead: 'reminders' },
+  history:       { headline: 'Look back at any day.', subtitle: 'Your memories, always within reach.', lead: 'history' },
+  older_entries: { headline: 'See all of today,\nand every day before.', subtitle: 'Nothing you log is ever out of sight.', lead: 'entries' },
+  themes:        { headline: 'Make nu. yours.', subtitle: 'Pick the look that helps you focus.', lead: 'themes' },
+  default:       { headline: 'Reminders on your schedule.', subtitle: 'Nudges at the moments that fit your day.', lead: 'reminders' },
+};
+const PAYWALL_SOURCES = Object.keys(PAYWALL_COPY);
 
 let paywallContext = { source: 'default', theme: null };
 
@@ -429,10 +421,12 @@ function openPaywall({ source = 'default', theme = null } = {}) {
   if (!PREMIUM_THEMES.includes(theme)) theme = null;
   paywallContext = { source, theme };
 
-  const copy = PAYWALL_BY_SOURCE[source] || {};
-  paywallHeadline.textContent = copy.headline || PAYWALL_HEADLINE;
-  document.getElementById('paywallSubtitle').textContent = copy.subtitle || PAYWALL_SUBTITLE;
-  paywallBenefits.replaceChildren(...(copy.benefits || PAYWALL_BENEFITS).map(text => {
+  const copy = PAYWALL_COPY[source];
+  paywallHeadline.textContent = copy.headline;
+  document.getElementById('paywallSubtitle').textContent = copy.subtitle;
+  // The tapped feature's benefit first, the rest in their usual order
+  const order = [copy.lead, ...BENEFIT_ORDER.filter(key => key !== copy.lead)];
+  paywallBenefits.replaceChildren(...order.map(key => BENEFITS[key]).map(text => {
     const li = document.createElement('li');
     li.innerHTML = `${ICON_CHECK}<span></span>`;
     li.querySelector('span').textContent = text;
@@ -715,14 +709,7 @@ function selectArchiveDay(date) {
   archiveDayList.appendChild(title);
 
   entries.slice().reverse().forEach(entry => {
-    const row = document.createElement('div');
-    row.className = 'log-entry';
-    row.innerHTML = `
-      <span class="log-time">${entry.time}</span>
-      <span class="log-text">${escapeHtml(entry.text)}</span>
-      ${entry.emoji ? `<span class="log-mood" aria-hidden="true">${entry.emoji}</span>` : ''}
-    `;
-    archiveDayList.appendChild(row);
+    archiveDayList.appendChild(buildEntryRow(selectedArchiveKey, entry, { listItem: false }));
   });
 }
 
@@ -793,6 +780,26 @@ const _boot = loadEntries();
 renderTimeline(_boot);
 renderRecap(_boot);
 input.focus();
+
+// Edit / delete entries (today's list and History)
+const dateFromKey = key => { const [, y, m, d] = key.split('_').map(Number); return new Date(y, m - 1, d); };
+initEntryActions({
+  loadEntriesForKey,
+  tap,
+  emojiChoices: () => (isSeasonalWindow() ? [...DECEMBER_EMOJIS, ...MORE_EMOJIS] : MORE_EMOJIS),
+  onChanged(key) {
+    if (key === todayKey()) {
+      const entries = loadEntries();
+      renderTimeline(entries);
+      renderRecap(entries);
+    }
+    if (archiveOverlay.classList.contains('visible') && isPremium) {
+      if (selectedArchiveKey === key) selectArchiveDay(dateFromKey(key));
+      else renderCalendar();
+    }
+    syncReminders(); // a deleted entry may change which reminders are skipped
+  },
+});
 
 initBackup({
   syncBodyScrollLock,

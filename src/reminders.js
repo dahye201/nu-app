@@ -1,4 +1,5 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { isDeletedReply } from './deletedReplies.js';
 
 // Native side: ios/App/App/NuReminders.swift
 const NuReminders = registerPlugin('NuReminders');
@@ -16,13 +17,57 @@ const RANDOM_END = 20 * 60;
 const RANDOM_MIN_GAP = 3 * 60;
 const SEED_KEY = 'nu_reminders_seed';
 
-// Rotated so the same line never shows twice in a row
-export const CHECKIN_MESSAGES = [
-  'What did you just finish? One line is enough.',
-  "Tiny step check: what's next?",
-  'Done anything? Even "made coffee" counts.',
-  'Where are you at? Jot it down, then back to it.',
+// Check-in lines (notification body only), picked by the local time the reminder fires.
+// Same pool for random (free) and custom (Premium) times.
+export const CHECKIN_LINES = {
+  morning: [ // before 12:00
+    "Morning check: what's the first tiny step?",
+    'What did you just finish? One line is enough.',
+    "Coffee in hand? Jot what's next.",
+    'What are you on right now?',
+  ],
+  afternoon: [ // 12:00–16:59
+    "Tiny step check: what's next?",
+    'Where are you at? Jot it down, then back to it.',
+    'Lost the thread? One line brings it back.',
+    'Lunch, meetings, tabs… what did you just do?',
+    'Afternoon check: what just happened?',
+  ],
+  evening: [ // 17:00 and later
+    'Done anything? Even "made coffee" counts.',
+    'Wrapping up? One line for what you just finished.',
+    'Quick check-in: what are you on?',
+    'Quick one: what are you doing right now?',
+  ],
+};
+// December only, at most one per day, mixed into that time's lines
+export const DECEMBER_LINES = [
+  'Gift hunting? Log what you just did 🎁',
+  'Brain frozen? ❄️ Just write what you did last.',
+  "Cozy check: what's next, tiny step only 🎄",
 ];
+const RECENT_LIMIT = 5; // never reuse any of the last 5 lines
+const ALL_LINES = [...CHECKIN_LINES.morning, ...CHECKIN_LINES.afternoon, ...CHECKIN_LINES.evening];
+
+const slotFor = hour => (hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening');
+
+/**
+ * Line for a reminder at `at` (ms). `recent` holds the latest lines, oldest first; none of the
+ * last RECENT_LIMIT is reused. December lines join that time's lines unless one was already used
+ * that day. If the time's lines are all used up, any unused line from the whole pool is taken.
+ * Seeded by the reminder time, so rescheduling gives the same line.
+ */
+export function pickLine({ at, recent = [], decemberUsedToday = false, seed = '' }) {
+  const when = new Date(at);
+  const blocked = new Set(recent.slice(-RECENT_LIMIT));
+  const december = when.getMonth() === 11 && !decemberUsedToday ? DECEMBER_LINES : [];
+  const fresh = list => list.filter(line => !blocked.has(line));
+  let options = fresh([...CHECKIN_LINES[slotFor(when.getHours())], ...december]);
+  if (!options.length) options = fresh([...ALL_LINES, ...december]);
+  if (!options.length) options = ALL_LINES; // unreachable with 13+ lines, but never send nothing
+  const rand = seededRandom(hashString(`${seed}:line:${at}`));
+  return options[Math.floor(rand() * options.length)];
+}
 
 const ICON_CLOSE = `<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6"/></svg>`;
 
@@ -108,23 +153,40 @@ export function randomTimesFor(day, seed) {
  * that day's times ("HH:MM"); `times` is a shortcut for the same times every day.
  * Leaves out times already past, the day the user tapped "Not today" (`skipDay`, "YYYY-MM-DD"),
  * and anything within 2 hours after the latest entry (`lastEntryAt`, ms).
+ * `sent` is the lines already delivered ({ at, body }), so the first new ones don't repeat them.
  */
-export function buildSchedule({ now, times = [], timesFor = () => times, lastEntryAt = 0, skipDay = null, days = SCHEDULE_DAYS }) {
+export function buildSchedule({ now, times = [], timesFor = () => times, lastEntryAt = 0, skipDay = null, days = SCHEDULE_DAYS, sent = [], seed = '' }) {
   const out = [];
+  const recent = [...sent].sort((a, b) => a.at - b.at).map(r => r.body);
+  const decemberDays = new Set(sent.filter(r => DECEMBER_LINES.includes(r.body)).map(r => dayString(new Date(r.at))));
   for (let d = 0; d < days; d++) {
     const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d);
     if (dayString(day) === skipDay) continue;
-    const dayNumber = Date.UTC(day.getFullYear(), day.getMonth(), day.getDate()) / 86400000;
-    [...new Set(timesFor(day))].sort().forEach((time, i) => {
+    [...new Set(timesFor(day))].sort().forEach(time => {
       const [h, m] = time.split(':').map(Number);
       const at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, m).getTime();
       if (at <= now.getTime()) return;
       if (lastEntryAt && at > lastEntryAt && at - lastEntryAt < SKIP_AFTER_ENTRY_MS) return;
-      // Stride MAX_TIMES (3) over 4 messages: neighbours, within and across days, always differ
-      out.push({ at, body: CHECKIN_MESSAGES[(dayNumber * MAX_TIMES + i) % CHECKIN_MESSAGES.length] });
+      const body = pickLine({ at, recent, decemberUsedToday: decemberDays.has(dayString(day)), seed });
+      recent.push(body);
+      if (DECEMBER_LINES.includes(body)) decemberDays.add(dayString(day));
+      out.push({ at, body });
     });
   }
   return out;
+}
+
+// What was scheduled, so lines that have already gone out count as "recent" next time
+const SENT_KEY = 'nu_reminders_sent';
+
+function loadSent(now) {
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem(SENT_KEY)) || []; } catch { list = []; }
+  return list.filter(r => r.at <= now).sort((a, b) => a.at - b.at).slice(-RECENT_LIMIT);
+}
+
+function saveScheduled(sent, upcoming) {
+  try { localStorage.setItem(SENT_KEY, JSON.stringify([...sent, ...upcoming])); } catch {}
 }
 
 /** Custom times only while Premium; otherwise (or if never set) random. */
@@ -154,6 +216,7 @@ async function mergePendingReplies() {
     const key = deps.dayKey(when);
     const list = deps.loadEntriesForKey(key);
     if (list.some(e => e.pid === reply.id)) continue;
+    if (isDeletedReply(reply.id)) continue; // the user deleted this reply's entry
     list.push({ text: reply.text, emoji: null, time: `${pad(when.getHours())}:${pad(when.getMinutes())}`, id: reply.ts, pid: reply.id });
     list.sort((a, b) => a.id - b.id);
     localStorage.setItem(key, JSON.stringify(list)); // throws on failure, so nothing is acknowledged
@@ -172,8 +235,18 @@ async function reschedule() {
   const lastEntryAt = today.reduce((max, e) => Math.max(max, Number(e.id) || 0), 0);
   const seed = reminderSeed();
   const timesFor = usesCustomTimes(settings) ? () => settings.times : day => randomTimesFor(day, seed);
-  const reminders = buildSchedule({ now: new Date(), timesFor, lastEntryAt, skipDay });
+  const now = new Date();
+  const sent = loadSent(now.getTime());
+  const reminders = buildSchedule({ now, timesFor, lastEntryAt, skipDay, sent, seed });
   await NuReminders.schedule({ reminders });
+  saveScheduled(sent, reminders);
+}
+
+/** Header bell: filled while reminders are really on (switched on and allowed by iOS). */
+async function refreshBell() {
+  const on = loadReminderSettings().enabled && (await permission()) === 'granted';
+  $('remindBtn').classList.toggle('is-on', on);
+  $('remindBtn').setAttribute('aria-label', on ? 'Reminders, on' : 'Reminders, off');
 }
 
 /** Pull in notification replies, then rebuild the upcoming check-ins. */
@@ -182,6 +255,7 @@ export function syncReminders() {
   return enqueue(async () => {
     await mergePendingReplies();
     await reschedule();
+    await refreshBell();
   });
 }
 
@@ -246,49 +320,22 @@ function lockCustomButton(btn, label) {
   btn.setAttribute('aria-label', locked ? `${label}, Premium` : label);
 }
 
-/* Opt-in, shown once after an entry */
-let askCustom = false;
-let customTimes = [...DEFAULT_CUSTOM_TIMES];
-
-function renderAskTimes() {
-  renderTimeChips($('remindAskTimes'), $('remindAskAddChip'), customTimes, {
-    format: formatTime,
-    onChange(times) { customTimes = times; renderAskTimes(); },
-  });
-}
-
-function showAskCustom(show) {
-  askCustom = show;
-  $('remindAskTimes').hidden = !show;
-  $('remindAskCustom').setAttribute('aria-expanded', show ? 'true' : 'false');
-  if (show) renderAskTimes();
-}
-
-function toggleAskCustom() {
-  if (!deps.isPremium()) { deps.openPaywall(); return; }
-  showAskCustom(!askCustom);
-}
-
+/* Opt-in, shown once after the first entry. Explains the benefit before iOS asks for permission. */
 function openAsk() {
-  lockCustomButton($('remindAskCustom'), 'Pick my own times');
-  customTimes = [...DEFAULT_CUSTOM_TIMES];
-  showAskCustom(false);
   openOverlay($('remindAskOverlay'));
 }
 
-// The choice is saved first; reminders only switch on if iOS grants permission.
+// "Set up reminders": only now does iOS ask. The current mode (random unless Premium chose
+// custom times) is kept; reminders switch on only if iOS grants permission.
 async function turnOnFromAsk() {
-  const settings = loadReminderSettings();
-  const choice = askCustom && deps.isPremium()
-    ? { mode: 'custom', times: [...customTimes].sort() }
-    : { mode: 'random', times: settings.times };
-  saveReminderSettings({ ...settings, ...choice, asked: true, enabled: false });
+  saveReminderSettings({ ...loadReminderSettings(), asked: true, enabled: false });
   const display = await askPermission();
   if (display === 'granted') saveReminderSettings({ ...loadReminderSettings(), enabled: true });
   closeOverlay($('remindAskOverlay'));
   syncReminders();
 }
 
+// "Not now": never shown again; reminders stay available from the bell
 function dismissAsk() {
   saveReminderSettings({ ...loadReminderSettings(), asked: true });
   closeOverlay($('remindAskOverlay'));
@@ -320,15 +367,15 @@ async function renderSettings() {
   $('remindModes').querySelectorAll('.rm-option').forEach(btn => {
     btn.setAttribute('aria-checked', (btn.dataset.mode === 'custom') === custom ? 'true' : 'false');
   });
-  lockCustomButton($('remindModes').querySelector('[data-mode="custom"]'), 'My times');
+  lockCustomButton($('remindModes').querySelector('[data-mode="custom"]'), 'At my times');
 
   $('remindTimes').hidden = !custom;
   if (custom) renderTimeChips($('remindTimes'), $('remindAddChip'), settings.times, { onChange: updateTimes });
 
-  const skip = 'Skipped if you logged something in the last 2 hours. Reply right from the notification to log without opening nu.';
-  $('remindHint').textContent = custom
-    ? `Up to 3 a day. ${skip}`
-    : `Twice a day at random moments between ${formatTime(toHHMM(RANDOM_START))} and ${formatTime(toHHMM(RANDOM_END))}. ${skip}`;
+  // First line: the random window, or (At my times) the chips above take its place
+  $('remindHintWhen').hidden = custom;
+  $('remindHintWhen').textContent = `Twice a day, between ${formatTime(toHHMM(RANDOM_START))} and ${formatTime(toHHMM(RANDOM_END))}.`;
+  refreshBell();
 }
 
 function chooseMode(mode) {
@@ -363,11 +410,6 @@ function commitAddedTime() {
   if (times) updateTimes(times);
 }
 
-function commitAskAddedTime() {
-  const times = takeAddedTime($('remindAskAddTime'), customTimes);
-  if (times) { customTimes = times; renderAskTimes(); }
-}
-
 export function openReminderSettings() {
   renderSettings();
   openOverlay($('remindOverlay'));
@@ -376,31 +418,24 @@ export function openReminderSettings() {
 /** Premium status changed (RevenueCat result, purchase or restore): redraw the locks, reschedule. */
 export function refreshReminderPremium() {
   if (!deps) return;
-  lockCustomButton($('remindAskCustom'), 'Pick my own times');
   if ($('remindOverlay').classList.contains('visible')) renderSettings();
   syncReminders();
 }
 
-/** Right after buying from the reminders paywall: back to where the user was, with the time chips open. */
+/** Right after buying from the reminders paywall: back to Reminders, on Custom times, ready to add times. */
 export function openCustomReminderTimes() {
+  saveReminderSettings({ ...loadReminderSettings(), mode: 'custom' });
   refreshReminderPremium();
-  if ($('remindAskOverlay').classList.contains('visible')) {
-    showAskCustom(true);
-  } else {
-    saveReminderSettings({ ...loadReminderSettings(), mode: 'custom' });
-    openReminderSettings();
-    syncReminders();
-  }
+  openReminderSettings();
 }
 
 export function initReminders(options) {
   deps = options;
   if (native) NuReminders.getTimeFormat().then(r => { hour12 = r.hour12; }).catch(() => {});
+  refreshBell();
 
-  $('remindAskCustom').addEventListener('click', toggleAskCustom);
   $('remindAskOn').addEventListener('click', turnOnFromAsk);
   $('remindAskLater').addEventListener('click', dismissAsk);
-  $('remindAskAddTime').addEventListener('blur', commitAskAddedTime);
 
   const overlay = $('remindOverlay');
   $('remindBtn').addEventListener('click', openReminderSettings);

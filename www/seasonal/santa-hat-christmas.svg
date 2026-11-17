@@ -1,7 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 80">
-  <g transform="translate(100 0) scale(-1 1)">
-    <path d="M14 56 C 22 30, 46 10, 74 12 C 84 13, 90 20, 92 30 C 84 24, 76 24, 70 30 C 64 38, 62 48, 66 56 Z" fill="#E63946"/>
-    <rect x="6" y="50" width="70" height="16" rx="8" fill="#FFF8EC"/>
-    <circle cx="92" cy="32" r="9" fill="#FFF8EC"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 110">
+  <defs><clipPath id="nuHatBrim"><rect x="14" y="70" width="112" height="24" rx="12"/></clipPath></defs>
+  <path d="M30 76 L 70 22 L 110 76 Z" fill="#E63946" stroke="#E63946" stroke-width="16" stroke-linejoin="round"/>
+  <path d="M70 22 L 110 76 L 84 76 Z" fill="#C42B37"/>
+  <path d="M70 22 L 110 76" stroke="#C42B37" stroke-width="16" stroke-linecap="round"/>
+  <rect x="14" y="70" width="112" height="24" rx="12" fill="#FFF8EC"/>
+    <circle cx="70" cy="16" r="13" fill="#E0D5C3"/>
+  <circle cx="68.5" cy="14.5" r="11.5" fill="#FFF8EC"/>
 </svg>
