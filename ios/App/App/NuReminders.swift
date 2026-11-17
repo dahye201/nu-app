@@ -150,7 +150,10 @@ final class NuReminders: NSObject, UNUserNotificationCenterDelegate {
 
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse,
-                                withCompletionHandler completionHandler: @escaping () -> Void) {
+                                withCompletionHandler systemCompletion: @escaping () -> Void) {
+        // iOS requires this completion on the main thread; the notification center calls back on
+        // its own queue, and calling it there aborts the app (seen with "Remind me in 1 hour").
+        let completionHandler = { DispatchQueue.main.async(execute: systemCompletion) }
         switch response.actionIdentifier {
         case Self.logAction:
             let text = (response as? UNTextInputNotificationResponse)?.userText
