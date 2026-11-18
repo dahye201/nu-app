@@ -2,13 +2,20 @@ import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { noteJournalChanged } from './journalMirror.js';
-import { t } from './i18n.js';
+import { t, formatShortDate } from './i18n.js';
 
 const LAST_EXPORT_KEY = 'nu_last_export';
 
 function rememberExport(date) {
   localStorage.setItem(LAST_EXPORT_KEY, date.toISOString());
   noteJournalChanged();
+  renderLastBackup();
+}
+
+/** "Last backup: Nov 12" / "Last backup: never", from the last successful export. */
+function renderLastBackup() {
+  const saved = new Date(localStorage.getItem(LAST_EXPORT_KEY) || NaN);
+  $('backupLast').textContent = t('backup.last', isNaN(saved) ? null : formatShortDate(saved));
 }
 
 // Backup file: { app: "nu.", format: 1, exportedAt, days: { "YYYY-MM-DD": [entry, …] } }
@@ -139,6 +146,7 @@ function renderMain() {
   $('backupSummary').textContent = total
     ? t('backup.summary', total, Object.keys(days).length)
     : t('backup.empty');
+  renderLastBackup();
   $('backupExport').disabled = !total;
   showStep('backupMain');
 }

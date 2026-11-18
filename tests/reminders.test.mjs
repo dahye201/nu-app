@@ -47,7 +47,7 @@ export default async function run(browser, urls) {
   p = await settingsPage(browser, urls.native, { mode: 'random' });
   let s = await state(p);
   t.check('random: next reminder shown', /^Next reminder: (Today|Tomorrow) at \d/.test(s.next), s.next);
-  t.check('random: 1-hour skip rule shown', s.lines.includes('Skipped if you logged in the last hour.'), JSON.stringify(s.lines));
+  t.check('random: 1-hour skip rule shown', s.lines.includes('Skipped if you’ve logged in the past hour.'), JSON.stringify(s.lines));
   await p.close();
   p = await settingsPage(browser, urls.native, { mode: 'custom', premium: '1', entryMinutesAgo: 5 });
   s = await state(p);
@@ -59,7 +59,7 @@ export default async function run(browser, urls) {
   const beforeRecap = new Date().getHours() * 60 + new Date().getMinutes() < 20 * 60 + 30;
   p = await settingsPage(browser, urls.native, { mode: 'random', entryMinutesAgo: 5 });
   s = await state(p);
-  t.check('recap line shown in the 🔔 screen', s.lines.includes('On days you log, a short recap at 20:30.'), JSON.stringify(s.lines));
+  t.check('recap line shown in the 🔔 screen', s.lines.includes('A short recap at 20:30 on days you log.'), JSON.stringify(s.lines));
   if (beforeRecap) t.check('recap scheduled for 20:30 with today\'s count', s.recap && s.recap.count === 1 && new Date(s.recap.at).getHours() === 20 && s.recap.body === '1 thing logged today. That counts.', JSON.stringify(s.recap));
   await p.close();
   p = await settingsPage(browser, urls.native, { mode: 'random' });

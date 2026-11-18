@@ -763,6 +763,7 @@
       color: var(--text);
       margin-bottom: 20px;
     }
+    #backupSummary { margin-bottom: 4px; } /* the last-backup line sits right under the count */
 
     /* The real file field covers the button so a tap opens the iOS file picker */
     .backup-import {
@@ -1225,6 +1226,7 @@
 
     /* ── Paywall ── */
     .paywall-overlay { z-index: 210; } /* above the Themes popup it can be opened from */
+    #backupOverlay { z-index: 205; } /* above History, which opens it; Close returns to History */
 
     /* Compact paywall. 4/8pt spacing; blocks use one-sided margins so gaps are exact. */
     .modal.paywall {
@@ -1269,6 +1271,7 @@
       color: var(--text);
       margin: 0;
       white-space: pre-line;
+      text-wrap: balance;        /* no lone last word ("…actually / go.") */
     }
     .pw-subtitle {
       font-size: 14px;
@@ -1557,10 +1560,9 @@
     <div class="modal">
       <div class="modal-brand" id="premiumTitle" data-i18n="themes.title">Themes</div>
       <div id="premiumUnlocked">
-        <div class="modal-price-line" id="themesSubtitle">Pick a theme:</div>
         <div class="theme-grid" id="themeGrid">
           <button class="theme-swatch" data-swatch="xmas" data-seasonal aria-label="Christmas theme" style="display:none"><span class="swatch-label">Christmas</span><span class="swatch-badge" data-i18n="themes.free">FREE</span></button>
-          <button class="theme-swatch" data-swatch="default" data-seasonal aria-label="Default theme" style="display:none"><span class="swatch-label">Default</span></button>
+          <button class="theme-swatch" data-swatch="default" data-seasonal aria-label="Classic theme" style="display:none"><span class="swatch-label">Classic</span></button>
           <button class="theme-swatch" data-swatch="dark" data-offseason aria-label="Dark theme"><span class="swatch-label">Dark</span></button>
           <button class="theme-swatch" data-swatch="light" data-offseason aria-label="Light theme"><span class="swatch-label">Light</span></button>
           <button class="theme-swatch" data-swatch="cyberpunk" data-premium aria-label="Cyberpunk theme"><span class="swatch-label">Cyberpunk</span><span class="swatch-lock" aria-hidden="true"></span></button>
@@ -1603,7 +1605,7 @@
         <div class="rm-label" data-i18n="rm.when">When</div>
         <div class="rm-options rm-modes" id="remindModes" role="radiogroup" aria-label="Reminder times" data-i18n-aria="rm.timesAria">
           <button class="rm-option" role="radio" aria-checked="true" data-mode="random"><span data-i18n="rm.random">Random, twice a day</span></button>
-          <button class="rm-option" role="radio" aria-checked="false" data-mode="custom" aria-label="At my times, Premium"><span data-i18n="rm.custom">At my times</span><span class="rm-tag"><svg class="rm-option-lock" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9"/></svg><span data-i18n="common.premium">Premium</span></span></button>
+          <button class="rm-option" role="radio" aria-checked="false" data-mode="custom" aria-label="Choose my times, Premium"><span data-i18n="rm.custom">Choose my times</span><span class="rm-tag"><svg class="rm-option-lock" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9"/></svg><span data-i18n="common.premium">Premium</span></span></button>
         </div>
         <!-- My times (Premium): edit freely -->
         <div class="rm-times" id="remindTimes" hidden>
@@ -1613,7 +1615,7 @@
           <p class="rm-paused" id="remindPaused" hidden><span data-i18n="rm.paused">Paused for today</span><span aria-hidden="true">·</span><button type="button" id="remindResume" data-i18n="rm.resume">Resume</button></p>
           <p class="rm-next" id="remindNext" hidden></p>
           <p id="remindHintWhen"></p>
-          <p id="remindHintSkip" data-i18n="rm.skip">Skipped if you logged in the last hour.</p>
+          <p id="remindHintSkip" data-i18n="rm.skip">Skipped if you’ve logged in the past hour.</p>
           <p data-i18n="rm.reply">Long-press the notification to log right from it.</p>
           <p id="remindHintRecap"></p>
         </div>
@@ -1631,8 +1633,9 @@
         <div class="modal-brand" data-i18n="backup.title">Back up &amp; restore</div>
         <div class="modal-price-line" data-i18n="backup.intro">Your entries live only on this phone. Save a copy as a file in Files, iCloud Drive or a message to yourself, and import it on a new phone.</div>
         <p class="backup-summary" id="backupSummary"></p>
+        <p class="backup-summary" id="backupLast"></p>
         <div class="modal-actions">
-          <button class="modal-cta" id="backupExport" data-i18n="backup.export">Export all entries</button>
+          <button class="modal-cta" id="backupExport" data-i18n="backup.export">Export a backup</button>
           <label class="backup-import"><span data-i18n="backup.import">Import a backup</span><input type="file" id="backupFile" accept=".json,application/json"></label>
           <button class="modal-close" id="backupClose" data-i18n="common.close">Close</button>
         </div>

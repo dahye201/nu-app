@@ -16,6 +16,13 @@ export const isKo = lang === 'ko';
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
+/** "20:30" → "저녁 8시 30분", "09:00" → "오전 9시" */
+function koSpokenTime(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const part = h < 12 ? '오전' : h < 18 ? '오후' : '저녁';
+  return `${part} ${h % 12 || 12}시${m ? ` ${m}분` : ''}`;
+}
+
 const en = {
   // Header
   'header.history': 'Past days',
@@ -30,12 +37,10 @@ const en = {
 
   // Themes
   'themes.title': 'Themes',
-  'themes.pick': 'Pick a theme:',
-  'themes.pickPremium': 'Premium unlocked. Pick a theme:',
   'themes.free': 'FREE',
   'themes.aria': name => `${name} theme`,
   'theme.xmas': 'Christmas',
-  'theme.default': 'Default',
+  'theme.default': 'Classic',
   'theme.dark': 'Dark',
   'theme.light': 'Light',
   'theme.cyberpunk': 'Cyberpunk',
@@ -60,20 +65,20 @@ const en = {
   'rm.when': 'When',
   'rm.timesAria': 'Reminder times',
   'rm.random': 'Random, twice a day',
-  'rm.custom': 'At my times',
+  'rm.custom': 'Choose my times',
   'rm.lockedAria': label => `${label}, Premium`,
   'rm.addTime': '+ Add time',
   'rm.addTimeAria': 'Add a reminder time',
   'rm.remove': time => `Remove ${time}`,
   'rm.paused': 'Paused for today',
   'rm.resume': 'Resume',
-  'rm.skip': 'Skipped if you logged in the last hour.',
+  'rm.skip': 'Skipped if you’ve logged in the past hour.',
   'rm.reply': 'Long-press the notification to log right from it.',
-  'rm.recap': time => `On days you log, a short recap at ${time}.`,
+  'rm.recap': time => `A short recap at ${time} on days you log.`,
   'recap.body': n => (n < 3
     ? `${plural(n, 'thing', 'things')} logged today. That counts.`
     : `${n} things logged today. That was a real day.`),
-  'rm.window': (from, to) => `Twice a day, between ${from} and ${to}.`,
+  'rm.window': (from, to) => `Two nudges a day, sometime between ${from} and ${to}.`,
   'rm.next': when => `Next reminder: ${when}`,
   'rm.today': time => `Today at ${time}`,
   'rm.tomorrow': time => `Tomorrow at ${time}`,
@@ -84,11 +89,12 @@ const en = {
   // Back up & restore
   'backup.aria': 'Back up and restore',
   'backup.title': 'Back up & restore',
-  'backup.intro': 'Your entries live only on this phone. Save a copy as a file in Files, iCloud Drive or a message to yourself, and import it on a new phone.',
-  'backup.export': 'Export all entries',
+  'backup.intro': 'Your entries live only on this phone, not in the cloud. Export a copy to Files or iCloud Drive, then import it on your new phone.',
+  'backup.export': 'Export a backup',
   'backup.import': 'Import a backup',
   'backup.importBtn': 'Import',
-  'backup.summary': (entries, days) => `${plural(entries, 'entry', 'entries')} across ${plural(days, 'day', 'days')} on this phone.`,
+  'backup.summary': (entries, days) => `${plural(entries, 'entry', 'entries')} across ${plural(days, 'day', 'days')}.`,
+  'backup.last': date => `Last backup: ${date || 'never'}`,
   'backup.empty': 'No entries on this phone yet.',
   'backup.shareTitle': 'Save your nu. backup',
   'backup.notBackup': "This file isn't a nu. backup.",
@@ -111,20 +117,20 @@ const en = {
   'pw.aria': 'nu. Premium',
   'pw.title': 'Premium',
   'pw.unlock': 'Unlock Premium',
-  'pw.unlockPrice': price => `Unlock Premium · ${price}`,
+  'pw.unlockPrice': price => `Unlock for ${price}`,
   'pw.processing': 'Processing…',
-  'pw.note': 'One-time payment. No subscription, ever.',
+  'pw.note': 'Pay once, keep it forever. No subscription.',
   'pw.restore': 'Restore Purchases',
   'pw.restoring': 'Restoring…',
   'pw.noPurchases': 'No purchases found',
-  'pw.benefit.reminders': 'Choose your own reminder times',
-  'pw.benefit.history': 'Browse any past day',
-  'pw.benefit.entries': 'Access all your daily entries',
-  'pw.benefit.themes': 'Unlock exclusive themes',
+  'pw.benefit.reminders': 'Pick your own reminder times',
+  'pw.benefit.history': 'Every past day, on a calendar',
+  'pw.benefit.entries': 'All of today’s entries, not just the latest',
+  'pw.benefit.themes': 'All premium themes',
   'pw.reminders.headline': 'Reminders on your schedule.',
   'pw.reminders.subtitle': 'Nudges at the moments that fit your day.',
-  'pw.history.headline': 'Look back at any day.',
-  'pw.history.subtitle': 'Your memories, always within reach.',
+  'pw.history.headline': 'See where your days\nactually go.',
+  'pw.history.subtitle': 'Every line you’ve logged, sorted by date.',
   'pw.entries.headline': 'See all of today,\nand every day before.',
   'pw.entries.subtitle': 'Nothing you log is ever out of sight.',
   'pw.themes.headline': 'Make nu. yours.',
@@ -137,7 +143,7 @@ const en = {
   'history.prev': 'Previous month',
   'history.next': 'Next month',
   'history.weekdays': ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
-  'history.hint': 'Tap a day with a dot to view its log.',
+  'history.hint': 'Tap a day with a dot to see what you logged.',
 
   // Today
   'main.placeholder': 'What did you just finish? What is the next tiny step?',
@@ -177,8 +183,6 @@ const ko = {
   'header.themes': '테마',
 
   'themes.title': '테마',
-  'themes.pick': '오늘 기분에 맞는 색으로',
-  'themes.pickPremium': '프리미엄 이용 중이에요. 오늘 기분에 맞는 색으로',
   'themes.aria': name => `${name} 테마`,
   // Theme names and the FREE badge stay in English (theme.*, themes.free)
   'common.close': '닫기',
@@ -206,7 +210,8 @@ const ko = {
   'rm.resume': '다시 켜기',
   'rm.skip': '1시간 안에 기록했으면 그 알림은 건너뛰어요.',
   'rm.reply': '알림을 길게 눌러서 바로 기록할 수 있어요.',
-  'rm.recap': time => `기록한 날엔 ${time}에 하루 정리를 보내드려요.`,
+  // "20:30" → "저녁 8시 30분"
+  'rm.recap': (time, hhmm) => `기록한 날엔 ${koSpokenTime(hhmm)}에 짧은 요약이 와요.`,
   'recap.body': n => (n < 3
     ? `오늘 ${n}개 기록했어요. 그거면 충분해요.`
     : `오늘 ${n}개 기록했어요. 알찬 하루였어요.`),
@@ -218,13 +223,14 @@ const ko = {
   'rm.unavailable': '알림은 nu. 아이폰 앱에서 쓸 수 있어요.',
   'rm.denied': 'nu. 알림이 꺼져 있어요.',
 
-  'backup.aria': '백업 및 복원',
-  'backup.title': '백업 및 복원',
-  'backup.intro': '기록은 이 폰에만 저장돼요. 파일 앱, iCloud Drive, 나에게 보내는 메시지 등에 사본을 저장해두고, 새 폰에서 가져오세요.',
-  'backup.export': '모든 기록 내보내기',
-  'backup.import': '백업 가져오기',
+  'backup.aria': '백업 · 복원',
+  'backup.title': '백업 · 복원',
+  'backup.intro': '기록은 이 폰에만 있어요. 클라우드에는 없어요. 파일 앱이나 iCloud Drive에 백업해두면 새 폰에서 불러올 수 있어요.',
+  'backup.export': '백업 내보내기',
+  'backup.import': '백업 불러오기',
   'backup.importBtn': '가져오기',
-  'backup.summary': (entries, days) => `이 폰에 ${days}일 동안의 기록 ${entries}개가 있어요.`,
+  'backup.summary': (entries, days) => `${days}일 동안 ${entries}개 기록`,
+  'backup.last': date => `마지막 백업: ${date || '없음'}`,
   'backup.empty': '아직 이 폰에 기록이 없어요.',
   'backup.shareTitle': 'nu. 백업 저장',
   'backup.notBackup': '이 파일은 nu. 백업이 아니에요.',
@@ -271,7 +277,7 @@ const ko = {
   'history.prev': '이전 달',
   'history.next': '다음 달',
   'history.weekdays': ['일', '월', '화', '수', '목', '금', '토'],
-  'history.hint': '점이 있는 날을 누르면 기록을 볼 수 있어요.',
+  'history.hint': '기록한 날을 누르면 그날 기록이 보여요.',
 
   'main.placeholder': '방금 끝낸 일, 그리고 다음 할 일 하나',
   'main.good': '좋음',
@@ -327,6 +333,13 @@ export function formatFullDate(d) {
 /** Calendar heading: "November 2026" / "2026년 11월" */
 export function formatMonthYear(year, month) {
   return isKo ? `${year}년 ${month + 1}월` : `${EN_MONTHS[month]} ${year}`;
+}
+
+/** Short date, year only when it isn't this year: "Nov 12" / "11월 12일", "Nov 12, 2025" / "2025년 11월 12일" */
+export function formatShortDate(d, now = new Date()) {
+  const sameYear = d.getFullYear() === now.getFullYear();
+  if (isKo) return `${sameYear ? '' : `${d.getFullYear()}년 `}${d.getMonth() + 1}월 ${d.getDate()}일`;
+  return d.toLocaleDateString('en-US', sameYear ? { month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 /** Full weekday name: "Thursday" / "목요일" */

@@ -24,7 +24,6 @@ const read = p => p.evaluate(() => ({
   bodies: (window.__scheduled || []).map(r => r.body),
   recap: window.__recap ? window.__recap.body : null,
   recap5: (window.__recapBodies || [])[4] || null,
-  themesLine: document.getElementById('themesSubtitle').textContent,
 }));
 
 export default async function run(browser, urls) {
@@ -45,7 +44,9 @@ export default async function run(browser, urls) {
   t.check('random window line in Korean (24-hour device)', s.rmWhen === '하루 두 번, 10:00~20:00 사이에 와요.', s.rmWhen);
   t.check('next reminder line in Korean', /^다음 알림: (오늘|내일) \d/.test(s.rmNext), s.rmNext);
   t.check('theme names stay in English', s.swatch === 'Paper', s.swatch);
-  t.check('themes popup line in Korean', s.themesLine === '오늘 기분에 맞는 색으로', s.themesLine);
+  const recapLine = await ko.evaluate(() => document.getElementById('remindHintRecap').textContent);
+  t.check('recap line in Korean', recapLine === '기록한 날엔 저녁 8시 30분에 짧은 요약이 와요.', recapLine);
+  t.check('themes popup: title then swatches, no subtitle', await ko.evaluate(() => !document.querySelector('#premiumUnlocked .modal-price-line')));
   t.check('recap texts in Korean (native bumps use these)', s.recap5 === '오늘 5개 기록했어요. 알찬 하루였어요.', s.recap5);
   t.check('calendar weekdays in Korean', s.weekdays === '일월화수목금토', s.weekdays);
   t.check('scheduled check-ins use the Korean pool', s.bodies.length > 0 && s.bodies.every(b => KO_LINES.includes(b)), s.bodies.join(' | '));
@@ -70,6 +71,29 @@ export default async function run(browser, urls) {
   t.check('copy button in Korean', s.copy === '오늘 기록 복사', s.copy);
   if (new Date().getHours() * 60 + new Date().getMinutes() < 20 * 60 + 30) t.check('evening recap in Korean', s.recap === '오늘 1개 기록했어요. 그거면 충분해요.', s.recap);
   await ko2.close();
+
+  t.section('Back up & restore: last backup line');
+  const lastOf = async (language, extra) => {
+    const p = await openPage(browser, urls.native, { language, local: { ...local, ij_premium_cached: '1', [todayKey()]: [{ text: 'x', emoji: null, time: '09:00', id: 1 }], ...extra } });
+    await click(p, '#historyBtn'); await wait(300); await click(p, '#backupBtn'); await wait(300);
+    const out = await p.evaluate(() => [document.getElementById('backupSummary').textContent, document.getElementById('backupLast').textContent]);
+    if (!extra.nu_last_export && language === 'en-US') t.check('backup sheet opens on top of History', await p.evaluate(() => document.elementFromPoint(196, 426).closest('.modal-overlay')?.id === 'backupOverlay'));
+    await p.close();
+    return out;
+  };
+  const y = new Date().getFullYear();
+  let [count, last] = await lastOf('en-US', {});
+  t.check('en: count without "on this phone"', count === '1 entry across 1 day.', count);
+  t.check('en: never backed up', last === 'Last backup: never', last);
+  [, last] = await lastOf('en-US', { nu_last_export: new Date(y, 10, 12, 9).toISOString() });
+  t.check('en: "Last backup: Nov 12" this year', last === 'Last backup: Nov 12', last);
+  [, last] = await lastOf('en-US', { nu_last_export: new Date(y - 1, 10, 12, 9).toISOString() });
+  t.check('en: year added for another year', last === `Last backup: Nov 12, ${y - 1}`, last);
+  [count, last] = await lastOf('ko-KR', {});
+  t.check('ko: count', count === '1일 동안 1개 기록', count);
+  t.check('ko: never backed up', last === '마지막 백업: 없음', last);
+  [, last] = await lastOf('ko-KR', { nu_last_export: new Date(y, 10, 12, 9).toISOString() });
+  t.check('ko: "마지막 백업: 11월 12일"', last === '마지막 백업: 11월 12일', last);
 
   t.section('English iPhone (and any other language)');
   for (const language of ['en-US', 'ja-JP']) {

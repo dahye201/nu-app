@@ -359,7 +359,6 @@ const closeModalBtn2  = document.getElementById('closeModalBtn2');
 
 function refreshPremiumModalState() {
   premiumBtn.innerHTML = `${isPremium ? ICON_SPARKLE : ICON_LOCK} ${t('header.themes')}`;
-  document.getElementById('themesSubtitle').textContent = t(isPremium ? 'themes.pickPremium' : 'themes.pick');
   modalOverlay.classList.toggle('themes-locked', !isPremium);
   document.querySelectorAll('.theme-swatch .swatch-lock').forEach(el => { el.innerHTML = ICON_LOCK; });
 }
@@ -410,7 +409,8 @@ const BENEFITS = {
 const BENEFIT_ORDER = ['reminders', 'history', 'entries', 'themes'];
 const PAYWALL_COPY = {
   reminders:     { headline: t('pw.reminders.headline'), subtitle: t('pw.reminders.subtitle'), lead: 'reminders' },
-  history:       { headline: t('pw.history.headline'), subtitle: t('pw.history.subtitle'), lead: 'history' },
+  history:       { headline: t('pw.history.headline'), subtitle: t('pw.history.subtitle'), lead: 'history',
+                   order: ['history', 'entries', 'reminders', 'themes'] },
   older_entries: { headline: t('pw.entries.headline'), subtitle: t('pw.entries.subtitle'), lead: 'entries' },
   themes:        { headline: t('pw.themes.headline'), subtitle: t('pw.themes.subtitle'), lead: 'themes' },
   default:       { headline: t('pw.reminders.headline'), subtitle: t('pw.reminders.subtitle'), lead: 'reminders' },
@@ -433,7 +433,7 @@ function openPaywall({ source = 'default', theme = null } = {}) {
   paywallHeadline.textContent = copy.headline;
   document.getElementById('paywallSubtitle').textContent = copy.subtitle;
   // The tapped feature's benefit first, the rest in their usual order
-  const order = [copy.lead, ...BENEFIT_ORDER.filter(key => key !== copy.lead)];
+  const order = copy.order || [copy.lead, ...BENEFIT_ORDER.filter(key => key !== copy.lead)];
   paywallBenefits.replaceChildren(...order.map(key => BENEFITS[key]).map(text => {
     const li = document.createElement('li');
     li.innerHTML = `${ICON_CHECK}<span></span>`;
@@ -473,7 +473,7 @@ document.addEventListener('keydown', e => {
 });
 
 function unlockLabel() {
-  // Localized store price, e.g. "Unlock Premium · $4.99"
+  // Localized store price, e.g. "Unlock for $4.99" ("프리미엄 잠금 해제 · ₩…")
   return premiumProduct ? t('pw.unlockPrice', premiumProduct.priceString) : t('pw.unlock');
 }
 

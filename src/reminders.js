@@ -519,7 +519,7 @@ async function renderSettings() {
   $('remindHintWhen').hidden = custom;
   $('remindHintWhen').textContent = t('rm.window', formatTime(toHHMM(RANDOM_START)), formatTime(toHHMM(RANDOM_END)));
   $('remindHintSkip').hidden = custom; // picked times always fire
-  $('remindHintRecap').textContent = t('rm.recap', formatTime(RECAP_TIME));
+  $('remindHintRecap').textContent = t('rm.recap', formatTime(RECAP_TIME), RECAP_TIME);
   refreshBell();
   refreshNext();
 }
