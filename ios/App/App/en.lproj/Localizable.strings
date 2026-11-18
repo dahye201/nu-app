@@ -1,0 +1,14 @@
+/* Notification action: reply with an entry */
+"action.log" = "Log it";
+
+/* Send button of the reply field */
+"action.log.send" = "Log";
+
+/* Reply field placeholder */
+"action.log.placeholder" = "What did you just finish?";
+
+/* Notification action: snooze for an hour */
+"action.later" = "Remind me in 1 hour";
+
+/* Notification action: no more check-ins today */
+"action.skip" = "Not today";

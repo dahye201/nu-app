@@ -2,6 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { noteJournalChanged } from './journalMirror.js';
+import { t } from './i18n.js';
 
 const LAST_EXPORT_KEY = 'nu_last_export';
 
@@ -66,11 +67,11 @@ function cleanEntry(raw, date) {
  */
 export function parseBackup(text) {
   let data;
-  try { data = JSON.parse(text); } catch { throw new Error("This file isn't a nu. backup."); }
+  try { data = JSON.parse(text); } catch { throw new Error(t('backup.notBackup')); }
   if (!data || data.app !== 'nu.' || typeof data.days !== 'object' || data.days === null) {
-    throw new Error("This file isn't a nu. backup.");
+    throw new Error(t('backup.notBackup'));
   }
-  if (data.format > FORMAT) throw new Error('This backup is from a newer version of nu. Update the app, then try again.');
+  if (data.format > FORMAT) throw new Error(t('backup.newer'));
 
   const days = {};
   let invalid = 0;
@@ -131,15 +132,13 @@ function countEntries(days) {
   return Object.values(days).reduce((n, list) => n + list.length, 0);
 }
 
-const entriesText = n => `${n} ${n === 1 ? 'entry' : 'entries'}`;
-const daysText = n => `${n} ${n === 1 ? 'day' : 'days'}`;
 
 function renderMain() {
   const days = collectDays(localStorage);
   const total = countEntries(days);
   $('backupSummary').textContent = total
-    ? `${entriesText(total)} across ${daysText(Object.keys(days).length)} on this phone.`
-    : 'No entries on this phone yet.';
+    ? t('backup.summary', total, Object.keys(days).length)
+    : t('backup.empty');
   $('backupExport').disabled = !total;
   showStep('backupMain');
 }
@@ -172,7 +171,7 @@ async function exportBackup() {
   if (Capacitor.isNativePlatform()) {
     const { uri } = await Filesystem.writeFile({ path: filename, data: json, directory: Directory.Cache, encoding: Encoding.UTF8 });
     try {
-      await Share.share({ files: [uri], dialogTitle: 'Save your nu. backup' });
+      await Share.share({ files: [uri], dialogTitle: t('backup.shareTitle') });
       rememberExport(now);
     } catch {
       // Share sheet dismissed: nothing to do
@@ -199,24 +198,24 @@ async function pickedFile(event) {
   try {
     parsed = parseBackup(await file.text());
   } catch (err) {
-    showDone("Couldn't import", err.message);
+    showDone(t('backup.importFailed'), err.message);
     return;
   }
 
   const plan = planImport(parsed.days, localStorage);
   if (!plan.added) {
-    showDone('Nothing new to import', plan.existing
-      ? 'Every entry in this backup is already on this phone.'
-      : 'This backup has no entries.');
+    showDone(t('backup.nothingNew'), plan.existing
+      ? t('backup.allThere')
+      : t('backup.noEntries'));
     return;
   }
 
   pendingPlan = plan;
-  $('backupConfirmTitle').textContent = `Import ${entriesText(plan.added)}?`;
-  const notes = [`From ${daysText(plan.days)}.`];
-  if (plan.existing) notes.push(`${plan.existing} already on this phone will be skipped.`);
-  if (parsed.invalid) notes.push(`${parsed.invalid} couldn't be read and will be skipped.`);
-  notes.push('Nothing on this phone is deleted or changed.');
+  $('backupConfirmTitle').textContent = t('backup.confirm', plan.added);
+  const notes = [t('backup.fromDays', plan.days)];
+  if (plan.existing) notes.push(t('backup.existing', plan.existing));
+  if (parsed.invalid) notes.push(t('backup.invalid', parsed.invalid));
+  notes.push(t('backup.safe'));
   $('backupConfirmText').textContent = notes.join(' ');
   showStep('backupConfirm');
 }
@@ -228,14 +227,14 @@ function confirmImport() {
   pendingPlan = null;
   deps.tap();
   deps.onEntriesChanged();
-  showDone('Imported', `${entriesText(added)} added to your journal.`);
+  showDone(t('backup.imported'), t('backup.added', added));
 }
 
 export function initBackup(options) {
   deps = options;
   const overlay = $('backupOverlay');
   $('backupBtn').addEventListener('click', openBackup);
-  $('backupExport').addEventListener('click', () => exportBackup().catch(() => showDone("Couldn't export", 'Something went wrong. Please try again.')));
+  $('backupExport').addEventListener('click', () => exportBackup().catch(() => showDone(t('backup.exportFailed'), t('backup.tryAgain'))));
   $('backupFile').addEventListener('change', pickedFile);
   $('backupImportConfirm').addEventListener('click', confirmImport);
   $('backupImportCancel').addEventListener('click', renderMain);

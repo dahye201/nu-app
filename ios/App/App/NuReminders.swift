@@ -130,13 +130,18 @@ final class NuReminders: NSObject, UNUserNotificationCenterDelegate {
 
         // .authenticationRequired: the reply is only accepted on an unlocked device, which keeps
         // the journal private and guarantees the queue file is writable.
+        // Titles follow the app's language (en.lproj / ko.lproj), resolved at each launch.
         let log = UNTextInputNotificationAction(identifier: Self.logAction,
-                                                title: "Log it",
+                                                title: NSLocalizedString("action.log", value: "Log it", comment: "Notification action: reply with an entry"),
                                                 options: [.authenticationRequired],
-                                                textInputButtonTitle: "Log",
-                                                textInputPlaceholder: "What did you just finish?")
-        let later = UNNotificationAction(identifier: Self.laterAction, title: "Remind me in 1 hour", options: [])
-        let skip = UNNotificationAction(identifier: Self.skipAction, title: "Not today", options: [])
+                                                textInputButtonTitle: NSLocalizedString("action.log.send", value: "Log", comment: "Send button of the reply field"),
+                                                textInputPlaceholder: NSLocalizedString("action.log.placeholder", value: "What did you just finish?", comment: "Reply field placeholder"))
+        let later = UNNotificationAction(identifier: Self.laterAction,
+                                         title: NSLocalizedString("action.later", value: "Remind me in 1 hour", comment: "Notification action: snooze for an hour"),
+                                         options: [])
+        let skip = UNNotificationAction(identifier: Self.skipAction,
+                                        title: NSLocalizedString("action.skip", value: "Not today", comment: "Notification action: no more check-ins today"),
+                                        options: [])
         let category = UNNotificationCategory(identifier: Self.categoryId, actions: [log, later, skip], intentIdentifiers: [], options: [])
         center.setNotificationCategories([category])
     }

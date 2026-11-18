@@ -1,6 +1,7 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { isDeletedReply } from './deletedReplies.js';
 import { noteJournalChanged } from './journalMirror.js';
+import { lang, isKo, t, formatWeekday } from './i18n.js';
 
 // Native side: ios/App/App/NuReminders.swift
 const NuReminders = registerPlugin('NuReminders');
@@ -26,8 +27,9 @@ const RESUME_MIN_WINDOW = 60;                // minutes
 const RESUME_LEAD = 15;                      // minutes: no check-in right on top of tapping Resume
 
 // Check-in lines (notification body only), picked by the local time the reminder fires.
-// Same pool for random (free) and custom (Premium) times.
-export const CHECKIN_LINES = {
+// Same pool for random (free) and custom (Premium) times. One pool per language, picked by the
+// device language; the same index means the same line in both.
+const LINES_EN = {
   morning: [ // before 12:00
     "Morning check: what's the first tiny step?",
     'What did you just finish? One line is enough.',
@@ -48,12 +50,42 @@ export const CHECKIN_LINES = {
     'Quick one: what are you doing right now?',
   ],
 };
+const LINES_KO = {
+  morning: [
+    '좋은 아침! 첫 번째 작은 할 일은 뭐예요?',
+    '방금 뭐 끝냈어요? 한 줄이면 충분해요.',
+    '커피 한 잔 들었어요? 다음 할 일 적어봐요.',
+    '지금 뭐 하고 있어요?',
+  ],
+  afternoon: [
+    '잠깐, 다음엔 뭐 할 거예요?',
+    '어디까지 했어요? 적어두고 다시 하던 거 해요.',
+    '흐름 놓쳤어요? 한 줄이면 다시 돌아와요.',
+    '점심, 회의, 쇼츠… 방금 뭐 했어요?',
+    '오후 체크인: 방금 무슨 일 있었어요?',
+  ],
+  evening: [
+    "뭐라도 했어요? '물 마심'도 기록이에요.",
+    '마무리 중이에요? 방금 끝낸 일 한 줄만요.',
+    '잠깐 체크인: 지금 뭐 하는 중이에요?',
+    '짧게 하나만: 지금 손에 잡은 일은?',
+  ],
+};
 // December only, at most one per day, mixed into that time's lines
-export const DECEMBER_LINES = [
+const DECEMBER_EN = [
   'Gift hunting? Log what you just did 🎁',
   'Brain frozen? ❄️ Just write what you did last.',
   "Cozy check: what's next, tiny step only 🎄",
 ];
+const DECEMBER_KO = [
+  '선물 고르는 중? 방금 한 일 적어봐요 🎁',
+  '머리가 안 돌아가요? ❄️ 마지막에 한 거 하나만 적어봐요.',
+  '포근하게 한 줄: 다음 할 일 하나만 🎄',
+];
+export const CHECKIN_LINES = lang === 'ko' ? LINES_KO : LINES_EN;
+export const DECEMBER_LINES = lang === 'ko' ? DECEMBER_KO : DECEMBER_EN;
+// Lines already sent may be in the other language (the iPhone's language changed since)
+const isDecemberLine = body => DECEMBER_EN.includes(body) || DECEMBER_KO.includes(body);
 const RECENT_LIMIT = 5; // never reuse any of the last 5 lines
 const ALL_LINES = [...CHECKIN_LINES.morning, ...CHECKIN_LINES.afternoon, ...CHECKIN_LINES.evening];
 
@@ -90,11 +122,12 @@ function deviceUsesHour12() {
   return cycle === 'h11' || cycle === 'h12';
 }
 
-/** "15:00" → "3 PM" or "15:00", following the device's 12/24-hour setting. */
+/** "15:00" → "3 PM" ("오후 3시") or "15:00", following the device's 12/24-hour setting. */
 export function formatTime(hhmm, useHour12 = deviceUsesHour12()) {
   const [h, m] = hhmm.split(':').map(Number);
   if (!useHour12) return `${pad(h)}:${pad(m)}`;
   const hour = h % 12 || 12;
+  if (isKo) return `${h < 12 ? '오전' : '오후'} ${m ? `${hour}:${pad(m)}` : `${hour}시`}`;
   return `${m ? `${hour}:${pad(m)}` : hour} ${h < 12 ? 'AM' : 'PM'}`;
 }
 const dayString = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -203,7 +236,7 @@ function loadResumed() {
 export function buildSchedule({ now, times = [], timesFor = () => times, lastEntryAt = 0, skipDay = null, days = SCHEDULE_DAYS, sent = [], seed = '' }) {
   const out = [];
   const recent = [...sent].sort((a, b) => a.at - b.at).map(r => r.body);
-  const decemberDays = new Set(sent.filter(r => DECEMBER_LINES.includes(r.body)).map(r => dayString(new Date(r.at))));
+  const decemberDays = new Set(sent.filter(r => isDecemberLine(r.body)).map(r => dayString(new Date(r.at))));
   for (let d = 0; d < days; d++) {
     const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d);
     if (dayString(day) === skipDay) continue;
@@ -299,12 +332,14 @@ function nextReminderAt(now = Date.now()) {
   return upcoming.length ? upcoming[0] : null;
 }
 
-/** "Today at 4 PM", "Tomorrow at 11:00", "Thursday at 9:30 AM" */
+/** "Today at 4 PM", "Tomorrow at 11:00", "Thursday at 9:30 AM" (Korean: "오늘 오후 4시", "목요일 오전 9:30") */
 function formatNext(at, now = new Date()) {
   const when = new Date(at);
   const days = Math.round((new Date(when.getFullYear(), when.getMonth(), when.getDate()) - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000);
-  const day = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : when.toLocaleDateString('en-US', { weekday: 'long' });
-  return `${day} at ${formatTime(`${pad(when.getHours())}:${pad(when.getMinutes())}`)}`;
+  const time = formatTime(`${pad(when.getHours())}:${pad(when.getMinutes())}`);
+  if (days === 0) return t('rm.today', time);
+  if (days === 1) return t('rm.tomorrow', time);
+  return t('rm.weekday', formatWeekday(when), time);
 }
 
 const pausedToday = () => !!skipDay && skipDay === dayString(new Date());
@@ -329,14 +364,14 @@ async function refreshNext() {
   $('remindPaused').hidden = !(on && pausedToday());
   const at = on ? nextReminderAt() : null;
   el.hidden = !at;
-  if (at) el.textContent = `Next reminder: ${formatNext(at)}`;
+  if (at) el.textContent = t('rm.next', formatNext(at));
 }
 
 /** Header bell: filled while reminders are really on (switched on and allowed by iOS). */
 async function refreshBell() {
   const on = loadReminderSettings().enabled && (await permission()) === 'granted';
   $('remindBtn').classList.toggle('is-on', on);
-  $('remindBtn').setAttribute('aria-label', on ? 'Reminders, on' : 'Reminders, off');
+  $('remindBtn').setAttribute('aria-label', t(on ? 'header.remindersOn' : 'header.remindersOff'));
 }
 
 /**
@@ -391,7 +426,7 @@ function renderTimeChips(list, addChip, times, { format = t => t, onChange }) {
     const chip = document.createElement('button');
     chip.className = 'rm-chip rm-time';
     chip.type = 'button';
-    chip.setAttribute('aria-label', removable ? `Remove ${format(time)}` : format(time));
+    chip.setAttribute('aria-label', removable ? t('rm.remove', format(time)) : format(time));
     chip.innerHTML = `<span>${format(time)}</span>${removable ? ICON_CLOSE : ''}`;
     chip.disabled = !removable;
     chip.addEventListener('click', () => onChange(sorted.filter(t => t !== time)));
@@ -412,7 +447,7 @@ function takeAddedTime(field, times) {
 function lockCustomButton(btn, label) {
   const locked = !deps.isPremium();
   btn.classList.toggle('is-locked', locked);
-  btn.setAttribute('aria-label', locked ? `${label}, Premium` : label);
+  btn.setAttribute('aria-label', locked ? t('rm.lockedAria', label) : label);
 }
 
 /* Opt-in, shown once after the first entry. Explains the benefit before iOS asks for permission. */
@@ -448,9 +483,7 @@ async function renderSettings() {
   const display = await permission();
   const blocked = display === 'denied' || display === 'unavailable';
 
-  $('remindNote').textContent = display === 'unavailable'
-    ? 'Reminders work in the nu. iPhone app.'
-    : 'Notifications are off for nu.';
+  $('remindNote').textContent = t(display === 'unavailable' ? 'rm.unavailable' : 'rm.denied');
   $('remindOpenSettings').hidden = display !== 'denied';
   $('remindBlocked').hidden = !blocked;
 
@@ -462,14 +495,14 @@ async function renderSettings() {
   $('remindModes').querySelectorAll('.rm-option').forEach(btn => {
     btn.setAttribute('aria-checked', (btn.dataset.mode === 'custom') === custom ? 'true' : 'false');
   });
-  lockCustomButton($('remindModes').querySelector('[data-mode="custom"]'), 'At my times');
+  lockCustomButton($('remindModes').querySelector('[data-mode="custom"]'), t('rm.custom'));
 
   $('remindTimes').hidden = !custom;
   if (custom) renderTimeChips($('remindTimes'), $('remindAddChip'), settings.times, { format: t => formatTime(t), onChange: updateTimes });
 
   // First line: the random window, or (At my times) the chips above take its place
   $('remindHintWhen').hidden = custom;
-  $('remindHintWhen').textContent = `Twice a day, between ${formatTime(toHHMM(RANDOM_START))} and ${formatTime(toHHMM(RANDOM_END))}.`;
+  $('remindHintWhen').textContent = t('rm.window', formatTime(toHHMM(RANDOM_START)), formatTime(toHHMM(RANDOM_END)));
   $('remindHintSkip').hidden = custom; // picked times always fire
   refreshBell();
   refreshNext();

@@ -1528,7 +1528,7 @@
 
   <!-- Header buttons, left → right: History, Reminders, light/dark, Themes -->
   <div class="header-actions">
-    <button class="history-btn" id="historyBtn" aria-label="Past days" title="History">
+    <button class="history-btn" id="historyBtn" aria-label="Past days" title="History" data-i18n-aria="header.history" data-i18n-title="header.historyTitle">
       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="4" width="14" height="13" rx="2.5"/>
         <line x1="3" y1="8" x2="17" y2="8"/>
@@ -1536,7 +1536,7 @@
         <line x1="13" y1="2" x2="13" y2="5"/>
       </svg>
     </button>
-    <button class="remind-btn" id="remindBtn" aria-label="Reminders" title="Reminders">
+    <button class="remind-btn" id="remindBtn" aria-label="Reminders" title="Reminders" data-i18n-title="header.reminders">
       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <g transform="translate(10 10) scale(1.07) translate(-10 -10.5)">
         <path d="M5.5 8.5a4.5 4.5 0 0 1 9 0c0 4 1.5 5.5 1.5 5.5H4s1.5-1.5 1.5-5.5z"/>
@@ -1544,19 +1544,19 @@
         </g>
       </svg>
     </button>
-    <button class="theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle dark/light mode"></button>
-    <button class="premium-btn" id="premiumBtn" aria-label="Premium features"></button>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle dark/light mode" data-i18n-title="header.toggleTitle" data-i18n-aria="header.toggle"></button>
+    <button class="premium-btn" id="premiumBtn" aria-label="Premium features" data-i18n-aria="header.premium"></button>
   </div>
 
   <!-- Premium Modal -->
   <!-- Themes popup (everyone). Premium themes are locked for free users and open the paywall. -->
-  <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-label="Themes">
+  <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-label="Themes" data-i18n-aria="themes.title">
     <div class="modal">
-      <div class="modal-brand" id="premiumTitle">Themes</div>
+      <div class="modal-brand" id="premiumTitle" data-i18n="themes.title">Themes</div>
       <div id="premiumUnlocked">
         <div class="modal-price-line" id="themesSubtitle">Pick a theme:</div>
         <div class="theme-grid" id="themeGrid">
-          <button class="theme-swatch" data-swatch="xmas" data-seasonal aria-label="Christmas theme" style="display:none"><span class="swatch-label">Christmas</span><span class="swatch-badge">FREE</span></button>
+          <button class="theme-swatch" data-swatch="xmas" data-seasonal aria-label="Christmas theme" style="display:none"><span class="swatch-label">Christmas</span><span class="swatch-badge" data-i18n="themes.free">FREE</span></button>
           <button class="theme-swatch" data-swatch="default" data-seasonal aria-label="Default theme" style="display:none"><span class="swatch-label">Default</span></button>
           <button class="theme-swatch" data-swatch="dark" data-offseason aria-label="Dark theme"><span class="swatch-label">Dark</span></button>
           <button class="theme-swatch" data-swatch="light" data-offseason aria-label="Light theme"><span class="swatch-label">Light</span></button>
@@ -1566,137 +1566,137 @@
           <button class="theme-swatch" data-swatch="paper" data-premium aria-label="Paper theme"><span class="swatch-label">Paper</span><span class="swatch-lock" aria-hidden="true"></span></button>
         </div>
         <div class="modal-actions">
-          <button class="modal-close" id="closeModalBtn2">Close</button>
+          <button class="modal-close" id="closeModalBtn2" data-i18n="common.close">Close</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Reminders opt-in (shown once, after an entry) -->
-  <div class="modal-overlay" id="remindAskOverlay" role="dialog" aria-modal="true" aria-label="Reminders">
+  <div class="modal-overlay" id="remindAskOverlay" role="dialog" aria-modal="true" aria-label="Reminders" data-i18n-aria="rm.title">
     <div class="modal rm-ask">
-      <div class="modal-brand">Nice, first one logged.</div>
-      <div class="modal-price-line">Want a nudge for the next one?<br>We'll check in twice a day, at random moments.<br>Just reply to the notification to log.</div>
+      <div class="modal-brand" data-i18n="ask.title">Nice, first one logged.</div>
+      <div class="modal-price-line" data-i18n-html="ask.body">Want a nudge for the next one?<br>We'll check in twice a day, at random moments.<br>Just reply to the notification to log.</div>
       <div class="modal-actions">
-        <button class="modal-cta" id="remindAskOn">Turn on reminders</button>
-        <button class="modal-close" id="remindAskLater">Not now</button>
+        <button class="modal-cta" id="remindAskOn" data-i18n="ask.on">Turn on reminders</button>
+        <button class="modal-close" id="remindAskLater" data-i18n="ask.later">Not now</button>
       </div>
-      <p class="rm-footnote">No streaks. No guilt. Turn off anytime.</p>
+      <p class="rm-footnote" data-i18n="ask.footnote">No streaks. No guilt. Turn off anytime.</p>
     </div>
   </div>
 
   <!-- Reminders settings -->
-  <div class="modal-overlay" id="remindOverlay" role="dialog" aria-modal="true" aria-label="Reminders">
+  <div class="modal-overlay" id="remindOverlay" role="dialog" aria-modal="true" aria-label="Reminders" data-i18n-aria="rm.title">
     <div class="modal">
       <div class="rm-head">
-        <div class="modal-brand">Reminders</div>
-        <button class="rm-switch" id="remindEnabled" role="switch" aria-checked="false" aria-label="Reminders"></button>
+        <div class="modal-brand" data-i18n="rm.title">Reminders</div>
+        <button class="rm-switch" id="remindEnabled" role="switch" aria-checked="false" aria-label="Reminders" data-i18n-aria="rm.title"></button>
       </div>
       <div class="rm-blocked" id="remindBlocked" hidden>
         <p class="rm-note" id="remindNote"></p>
-        <button class="rm-settings-link" id="remindOpenSettings" hidden>Enable in Settings</button>
+        <button class="rm-settings-link" id="remindOpenSettings" hidden data-i18n="rm.openSettings">Enable in Settings</button>
       </div>
       <div id="remindBody">
-        <div class="rm-label">When</div>
-        <div class="rm-options rm-modes" id="remindModes" role="radiogroup" aria-label="Reminder times">
-          <button class="rm-option" role="radio" aria-checked="true" data-mode="random"><span>Random, twice a day</span></button>
-          <button class="rm-option" role="radio" aria-checked="false" data-mode="custom" aria-label="At my times, Premium"><span>At my times</span><span class="rm-tag"><svg class="rm-option-lock" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9"/></svg>Premium</span></button>
+        <div class="rm-label" data-i18n="rm.when">When</div>
+        <div class="rm-options rm-modes" id="remindModes" role="radiogroup" aria-label="Reminder times" data-i18n-aria="rm.timesAria">
+          <button class="rm-option" role="radio" aria-checked="true" data-mode="random"><span data-i18n="rm.random">Random, twice a day</span></button>
+          <button class="rm-option" role="radio" aria-checked="false" data-mode="custom" aria-label="At my times, Premium"><span data-i18n="rm.custom">At my times</span><span class="rm-tag"><svg class="rm-option-lock" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9"/></svg><span data-i18n="common.premium">Premium</span></span></button>
         </div>
         <!-- My times (Premium): edit freely -->
         <div class="rm-times" id="remindTimes" hidden>
-          <label class="rm-chip rm-add" id="remindAddChip">+ Add time<input type="time" id="remindAddTime" aria-label="Add a reminder time"></label>
+          <label class="rm-chip rm-add" id="remindAddChip"><span data-i18n="rm.addTime">+ Add time</span><input type="time" id="remindAddTime" aria-label="Add a reminder time" data-i18n-aria="rm.addTimeAria"></label>
         </div>
         <div class="rm-hint" id="remindHint">
-          <p class="rm-paused" id="remindPaused" hidden><span>Paused for today</span><span aria-hidden="true">·</span><button type="button" id="remindResume">Resume</button></p>
+          <p class="rm-paused" id="remindPaused" hidden><span data-i18n="rm.paused">Paused for today</span><span aria-hidden="true">·</span><button type="button" id="remindResume" data-i18n="rm.resume">Resume</button></p>
           <p class="rm-next" id="remindNext" hidden></p>
           <p id="remindHintWhen"></p>
-          <p id="remindHintSkip">Skipped if you logged in the last hour.</p>
-          <p>Reply right from the notification.</p>
+          <p id="remindHintSkip" data-i18n="rm.skip">Skipped if you logged in the last hour.</p>
+          <p data-i18n="rm.reply">Reply right from the notification.</p>
         </div>
       </div>
       <div class="modal-actions">
-        <button class="modal-close" id="remindClose">Close</button>
+        <button class="modal-close" id="remindClose" data-i18n="common.close">Close</button>
       </div>
     </div>
   </div>
 
   <!-- Back up & restore -->
-  <div class="modal-overlay" id="backupOverlay" role="dialog" aria-modal="true" aria-label="Back up and restore">
+  <div class="modal-overlay" id="backupOverlay" role="dialog" aria-modal="true" aria-label="Back up and restore" data-i18n-aria="backup.aria">
     <div class="modal">
       <div id="backupMain">
-        <div class="modal-brand">Back up &amp; restore</div>
-        <div class="modal-price-line">Your entries live only on this phone. Save a copy as a file in Files, iCloud Drive or a message to yourself, and import it on a new phone.</div>
+        <div class="modal-brand" data-i18n="backup.title">Back up &amp; restore</div>
+        <div class="modal-price-line" data-i18n="backup.intro">Your entries live only on this phone. Save a copy as a file in Files, iCloud Drive or a message to yourself, and import it on a new phone.</div>
         <p class="backup-summary" id="backupSummary"></p>
         <div class="modal-actions">
-          <button class="modal-cta" id="backupExport">Export all entries</button>
-          <label class="backup-import">Import a backup<input type="file" id="backupFile" accept=".json,application/json"></label>
-          <button class="modal-close" id="backupClose">Close</button>
+          <button class="modal-cta" id="backupExport" data-i18n="backup.export">Export all entries</button>
+          <label class="backup-import"><span data-i18n="backup.import">Import a backup</span><input type="file" id="backupFile" accept=".json,application/json"></label>
+          <button class="modal-close" id="backupClose" data-i18n="common.close">Close</button>
         </div>
       </div>
       <div id="backupConfirm" hidden>
         <div class="modal-brand" id="backupConfirmTitle"></div>
         <div class="modal-price-line" id="backupConfirmText"></div>
         <div class="modal-actions">
-          <button class="modal-cta" id="backupImportConfirm">Import</button>
-          <button class="modal-close" id="backupImportCancel">Cancel</button>
+          <button class="modal-cta" id="backupImportConfirm" data-i18n="backup.importBtn">Import</button>
+          <button class="modal-close" id="backupImportCancel" data-i18n="common.cancel">Cancel</button>
         </div>
       </div>
       <div id="backupDone" hidden>
         <div class="modal-brand" id="backupDoneTitle"></div>
         <div class="modal-price-line" id="backupDoneText"></div>
         <div class="modal-actions">
-          <button class="modal-close" id="backupDoneBtn">Done</button>
+          <button class="modal-close" id="backupDoneBtn" data-i18n="common.done">Done</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Premium paywall -->
-  <div class="modal-overlay paywall-overlay" id="paywallOverlay" role="dialog" aria-modal="true" aria-label="nu. Premium">
+  <div class="modal-overlay paywall-overlay" id="paywallOverlay" role="dialog" aria-modal="true" aria-label="nu. Premium" data-i18n-aria="pw.aria">
     <div class="modal paywall">
-      <div class="modal-brand paywall-title"><span class="pw-logo">nu<span class="pw-logo-dot"></span></span> Premium</div>
+      <div class="modal-brand paywall-title"><span class="pw-logo">nu<span class="pw-logo-dot"></span></span> <span data-i18n="pw.title">Premium</span></div>
       <div class="pw-headline" id="paywallHeadline"></div>
       <p class="pw-subtitle" id="paywallSubtitle"></p>
       <ul class="pw-benefits" id="paywallBenefits"></ul>
       <button class="modal-cta" id="unlockBtn" disabled>Unlock Premium</button>
-      <p class="pw-note">One-time payment. No subscription, ever.</p>
+      <p class="pw-note" data-i18n="pw.note">One-time payment. No subscription, ever.</p>
       <div class="pw-links">
-        <button class="pw-link" id="restoreBtn">Restore Purchases</button>
+        <button class="pw-link" id="restoreBtn" data-i18n="pw.restore">Restore Purchases</button>
         <span class="pw-sep" aria-hidden="true">·</span>
-        <button class="pw-link" id="closePaywallBtn">Close</button>
+        <button class="pw-link" id="closePaywallBtn" data-i18n="common.close">Close</button>
       </div>
     </div>
   </div>
 
   <!-- Archive Modal -->
-  <div class="modal-overlay" id="archiveOverlay" role="dialog" aria-modal="true" aria-label="nu. History">
+  <div class="modal-overlay" id="archiveOverlay" role="dialog" aria-modal="true" aria-label="nu. History" data-i18n-aria="history.aria">
     <div class="modal">
-      <div class="modal-brand">History</div>
+      <div class="modal-brand" data-i18n="history.title">History</div>
 
       <div id="archiveLocked">
-        <div class="modal-price-line">Viewing past days is a premium feature.</div>
+        <div class="modal-price-line" data-i18n="history.locked">Viewing past days is a premium feature.</div>
         <div class="modal-actions">
-          <button class="modal-cta" id="archiveUnlockBtn">Unlock Premium</button>
-          <button class="modal-close" id="closeArchiveBtn">Close</button>
+          <button class="modal-cta" id="archiveUnlockBtn" data-i18n="pw.unlock">Unlock Premium</button>
+          <button class="modal-close" id="closeArchiveBtn" data-i18n="common.close">Close</button>
         </div>
       </div>
 
       <div id="archiveUnlocked" style="display:none">
         <div id="calView">
           <div class="cal-header">
-            <button class="cal-nav-btn" id="calPrevBtn" aria-label="Previous month">‹</button>
+            <button class="cal-nav-btn" id="calPrevBtn" aria-label="Previous month" data-i18n-aria="history.prev">‹</button>
             <div class="cal-month-label" id="calMonthLabel"></div>
-            <button class="cal-nav-btn" id="calNextBtn" aria-label="Next month">›</button>
+            <button class="cal-nav-btn" id="calNextBtn" aria-label="Next month" data-i18n-aria="history.next">›</button>
           </div>
-          <div class="cal-weekdays">
+          <div class="cal-weekdays" id="calWeekdays">
             <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
           </div>
           <div class="cal-grid" id="calGrid"></div>
         </div>
         <div id="archiveDayList"></div>
         <div class="modal-actions">
-          <button class="modal-secondary" id="backupBtn">Back up &amp; restore</button>
-          <button class="modal-close" id="closeArchiveBtn2">Close</button>
+          <button class="modal-secondary" id="backupBtn" data-i18n="backup.title">Back up &amp; restore</button>
+          <button class="modal-close" id="closeArchiveBtn2" data-i18n="common.close">Close</button>
         </div>
       </div>
     </div>
@@ -1722,17 +1722,18 @@
       <textarea
         id="journalInput"
         placeholder="What did you just finish? What is the next tiny step?"
+        data-i18n-placeholder="main.placeholder"
         rows="3"
         spellcheck="true"
         autocomplete="off"
       ></textarea>
       <div class="input-footer">
-        <button class="emoji-btn" data-emoji="🙂" aria-label="Good">🙂</button>
-        <button class="emoji-btn" data-emoji="😐" aria-label="Neutral">😐</button>
-        <button class="emoji-btn" data-emoji="😫" aria-label="Tired">😫</button>
+        <button class="emoji-btn" data-emoji="🙂" aria-label="Good" data-i18n-aria="main.good">🙂</button>
+        <button class="emoji-btn" data-emoji="😐" aria-label="Neutral" data-i18n-aria="main.neutral">😐</button>
+        <button class="emoji-btn" data-emoji="😫" aria-label="Tired" data-i18n-aria="main.tired">😫</button>
         <div class="emoji-picker-wrap">
-          <button class="more-btn" id="moreBtn" aria-label="More emojis" title="More emojis">+</button>
-          <div class="emoji-panel" id="emojiPanel" role="dialog" aria-label="Emoji picker">
+          <button class="more-btn" id="moreBtn" aria-label="More emojis" title="More emojis" data-i18n-aria="main.moreEmojis" data-i18n-title="main.moreEmojis">+</button>
+          <div class="emoji-panel" id="emojiPanel" role="dialog" aria-label="Emoji picker" data-i18n-aria="main.emojiPicker">
             <div class="emoji-grid" id="emojiGrid"></div>
           </div>
         </div>
@@ -1742,16 +1743,16 @@
     <hr class="divider">
 
     <!-- Timeline -->
-    <div class="timeline" id="timeline" role="list" aria-label="Journal entries"></div>
+    <div class="timeline" id="timeline" role="list" aria-label="Journal entries" data-i18n-aria="main.entries"></div>
 
     <!-- Recap -->
     <div class="recap" id="recap" style="display:none">
-      <button class="copy-btn" id="copyBtn">Copy today's log</button>
+      <button class="copy-btn" id="copyBtn" data-i18n="main.copy">Copy today's log</button>
     </div>
   </div>
 
   <div class="entry-toast" id="entryToast" role="status" aria-live="polite">
-    <span>Entry deleted</span><span aria-hidden="true">·</span><button type="button">Undo</button>
+    <span data-i18n="entry.deleted">Entry deleted</span><span aria-hidden="true">·</span><button type="button" data-i18n="entry.undo">Undo</button>
   </div>
 
   <script src="bundle.js"></script>

@@ -1,0 +1,14 @@
+/* Notification action: reply with an entry */
+"action.log" = "기록하기";
+
+/* Send button of the reply field */
+"action.log.send" = "기록";
+
+/* Reply field placeholder */
+"action.log.placeholder" = "방금 뭐 했어요?";
+
+/* Notification action: snooze for an hour */
+"action.later" = "1시간 뒤에 알려줘요";
+
+/* Notification action: no more check-ins today */
+"action.skip" = "오늘은 패스";

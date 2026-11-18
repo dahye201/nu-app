@@ -1,6 +1,7 @@
 // Edit (tap) and delete (swipe left, with Undo) for log entries, in today's list and in History.
 // Timestamps are never edited: an entry keeps its `time`, `id` and `pid`; only text and mood change.
 import { rememberDeletedReply, forgetDeletedReply } from './deletedReplies.js';
+import { t } from './i18n.js';
 import { noteJournalChanged } from './journalMirror.js';
 
 const ACTION_W = 88;          // width of the red "Delete" action
@@ -178,7 +179,7 @@ function startEdit(row) {
   text.setAttribute('contenteditable', 'plaintext-only');
   text.setAttribute('enterkeyhint', 'done');
   text.setAttribute('role', 'textbox');
-  text.setAttribute('aria-label', 'Edit entry');
+  text.setAttribute('aria-label', t('entry.edit'));
   text.focus();
   // caret at the end
   const range = document.createRange();
@@ -191,7 +192,7 @@ function startEdit(row) {
   const slot = moodSlot(row);
   showMood(row, editing.emoji);
   slot.setAttribute('role', 'button');
-  slot.setAttribute('aria-label', editing.emoji ? `Mood ${editing.emoji}. Change` : 'Add mood');
+  slot.setAttribute('aria-label', editing.emoji ? t('entry.mood', editing.emoji) : t('entry.addMood'));
   // keep the keyboard up while choosing a mood
   slot.onpointerdown = e => e.preventDefault();
   slot.onclick = e => { e.stopPropagation(); toggleMoodPanel(slot); };
@@ -250,7 +251,7 @@ function toggleMoodPanel(slot) {
   panel.className = 'emoji-panel visible entry-mood-panel';
   panel.id = 'entryMoodPanel';
   panel.setAttribute('role', 'dialog');
-  panel.setAttribute('aria-label', 'Choose a mood');
+  panel.setAttribute('aria-label', t('entry.chooseMood'));
   panel.onpointerdown = e => e.preventDefault(); // keep editing focus
   const grid = document.createElement('div');
   grid.className = 'emoji-grid';
@@ -297,7 +298,7 @@ export function buildEntryRow(key, entry, { listItem = true } = {}) {
   const action = document.createElement('button');
   action.type = 'button';
   action.className = 'log-delete';
-  action.textContent = 'Delete';
+  action.textContent = t('entry.delete');
   row.appendChild(action);
 
   const slide = document.createElement('div');

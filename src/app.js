@@ -11,10 +11,16 @@ import { restoreJournalIfEmpty, noteJournalChanged } from './journalMirror.js';
 import { initReminders, adoptRestoredReminders, afterEntryAdded, refreshReminderPremium, openCustomReminderTimes, syncReminders } from './reminders.js';
 import { initBackup } from './backup.js';
 import { initEntryActions, buildEntryRow, commitEdit, isEditing } from './entryActions.js';
+import { t, translatePage, formatMonthDay, formatFullDate, formatMonthYear } from './i18n.js';
 
-const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const MONTHS = ['January','February','March','April','May','June',
-                'July','August','September','October','November','December'];
+// Static text in index.html, in the device language, before anything is drawn
+translatePage();
+document.querySelectorAll('#calWeekdays span').forEach((el, i) => { el.textContent = t('history.weekdays')[i]; });
+document.querySelectorAll('.theme-swatch').forEach(btn => {
+  const name = t(`theme.${btn.dataset.swatch}`);
+  btn.querySelector('.swatch-label').textContent = name;
+  btn.setAttribute('aria-label', t('themes.aria', name));
+});
 
 // Header icons are sized to match the calendar (~14–15px of ink in the 18px box).
 // Scaled icons get a compensated stroke so lines stay 1.6 on screen like the others.
@@ -74,7 +80,7 @@ function initDate() {
 }
 
 function updateClock(now = new Date()) {
-  const month = `${MONTHS[now.getMonth()]} ${now.getDate()}`;
+  const month = formatMonthDay(now);
   const hhmm  = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
   document.getElementById('dateText').innerHTML =
     `<span class="date-month">${month}</span><span class="date-clock">${hhmm}</span>`;
@@ -130,7 +136,7 @@ function renderTimeline(entries) {
   if (!entries.length) {
     const hint = document.createElement('p');
     hint.className = 'empty-hint';
-    hint.textContent = 'No entries yet — start writing above.';
+    hint.textContent = t('main.empty');
     timeline.appendChild(hint);
     return;
   }
@@ -158,9 +164,9 @@ function renderTimeline(entries) {
 
     const row = document.createElement('button');
     row.className = 'log-entry locked-row';
-    row.setAttribute('aria-label', `${hidden} earlier ${hidden === 1 ? 'entry' : 'entries'} today. Unlock with Premium`);
+    row.setAttribute('aria-label', t('main.lockedAria', hidden));
     row.innerHTML = `
-      <span class="locked-row-text">${hidden} earlier ${hidden === 1 ? 'entry' : 'entries'} today</span>
+      <span class="locked-row-text">${t('main.locked', hidden)}</span>
       <span class="locked-row-icon" aria-hidden="true">${ICON_LOCK}</span>
     `;
     row.addEventListener('click', () => openPaywall({ source: 'older_entries' }));
@@ -178,7 +184,7 @@ function renderRecap(entries) {
 }
 
 function buildCopyText(entries, date = new Date()) {
-  const header = `─── ${DAYS[date.getDay()]}, ${MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()} ───`;
+  const header = `─── ${formatFullDate(date)} ───`;
   const lines = entries.map(e => {
     const mood = e.emoji ? ` ${e.emoji}` : '';
     return `[${e.time}]${mood} ${e.text}`;
@@ -194,7 +200,7 @@ copyBtn.addEventListener('click', async () => {
 
   if (Capacitor.isNativePlatform()) {
     try {
-      await Share.share({ text, dialogTitle: "Today's log" });
+      await Share.share({ text, dialogTitle: t('main.shareTitle') });
       return;
     } catch {
       // fall through to clipboard on cancel/error
@@ -203,15 +209,15 @@ copyBtn.addEventListener('click', async () => {
 
   try {
     await navigator.clipboard.writeText(text);
-    copyBtn.textContent = 'Copied! 👍';
+    copyBtn.textContent = t('main.copied');
     copyBtn.classList.add('copied');
     setTimeout(() => {
-      copyBtn.textContent = "Copy today's log";
+      copyBtn.textContent = t('main.copy');
       copyBtn.classList.remove('copied');
     }, 2000);
   } catch {
-    copyBtn.textContent = 'Copy failed — try again';
-    setTimeout(() => { copyBtn.textContent = "Copy today's log"; }, 2000);
+    copyBtn.textContent = t('main.copyFailed');
+    setTimeout(() => { copyBtn.textContent = t('main.copy'); }, 2000);
   }
 });
 
@@ -352,8 +358,8 @@ const premiumBtn      = document.getElementById('premiumBtn');
 const closeModalBtn2  = document.getElementById('closeModalBtn2');
 
 function refreshPremiumModalState() {
-  premiumBtn.innerHTML = `${isPremium ? ICON_SPARKLE : ICON_LOCK} Themes`;
-  document.getElementById('themesSubtitle').textContent = isPremium ? 'Premium unlocked. Pick a theme:' : 'Pick a theme:';
+  premiumBtn.innerHTML = `${isPremium ? ICON_SPARKLE : ICON_LOCK} ${t('header.themes')}`;
+  document.getElementById('themesSubtitle').textContent = t(isPremium ? 'themes.pickPremium' : 'themes.pick');
   modalOverlay.classList.toggle('themes-locked', !isPremium);
   document.querySelectorAll('.theme-swatch .swatch-lock').forEach(el => { el.innerHTML = ICON_LOCK; });
 }
@@ -396,18 +402,18 @@ const ICON_CHECK = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" s
 // Headline, subtitle and the first benefit follow the Premium feature the user tapped.
 // `source` also decides what happens after purchase.
 const BENEFITS = {
-  reminders: 'Choose your own reminder times',
-  history: 'Browse any past day',
-  entries: 'Access all your daily entries',
-  themes: 'Unlock exclusive themes',
+  reminders: t('pw.benefit.reminders'),
+  history: t('pw.benefit.history'),
+  entries: t('pw.benefit.entries'),
+  themes: t('pw.benefit.themes'),
 };
 const BENEFIT_ORDER = ['reminders', 'history', 'entries', 'themes'];
 const PAYWALL_COPY = {
-  reminders:     { headline: 'Reminders on your schedule.', subtitle: 'Nudges at the moments that fit your day.', lead: 'reminders' },
-  history:       { headline: 'Look back at any day.', subtitle: 'Your memories, always within reach.', lead: 'history' },
-  older_entries: { headline: 'See all of today,\nand every day before.', subtitle: 'Nothing you log is ever out of sight.', lead: 'entries' },
-  themes:        { headline: 'Make nu. yours.', subtitle: 'Pick the look that helps you focus.', lead: 'themes' },
-  default:       { headline: 'Reminders on your schedule.', subtitle: 'Nudges at the moments that fit your day.', lead: 'reminders' },
+  reminders:     { headline: t('pw.reminders.headline'), subtitle: t('pw.reminders.subtitle'), lead: 'reminders' },
+  history:       { headline: t('pw.history.headline'), subtitle: t('pw.history.subtitle'), lead: 'history' },
+  older_entries: { headline: t('pw.entries.headline'), subtitle: t('pw.entries.subtitle'), lead: 'entries' },
+  themes:        { headline: t('pw.themes.headline'), subtitle: t('pw.themes.subtitle'), lead: 'themes' },
+  default:       { headline: t('pw.reminders.headline'), subtitle: t('pw.reminders.subtitle'), lead: 'reminders' },
 };
 const PAYWALL_SOURCES = Object.keys(PAYWALL_COPY);
 
@@ -468,13 +474,13 @@ document.addEventListener('keydown', e => {
 
 function unlockLabel() {
   // Localized store price, e.g. "Unlock Premium · $4.99"
-  return premiumProduct ? `Unlock Premium · ${premiumProduct.priceString}` : 'Unlock Premium';
+  return premiumProduct ? t('pw.unlockPrice', premiumProduct.priceString) : t('pw.unlock');
 }
 
 unlockBtn.addEventListener('click', async () => {
   if (!premiumProduct) return;
   unlockBtn.disabled = true;
-  unlockBtn.textContent = 'Processing…';
+  unlockBtn.textContent = t('pw.processing');
   const result = await purchasePremium(premiumProduct);
   unlockBtn.disabled = false;
   unlockBtn.textContent = unlockLabel();
@@ -485,15 +491,15 @@ unlockBtn.addEventListener('click', async () => {
 });
 
 restoreBtn.addEventListener('click', async () => {
-  restoreBtn.textContent = 'Restoring…';
+  restoreBtn.textContent = t('pw.restoring');
   const restored = await restorePurchases();
-  restoreBtn.textContent = 'Restore Purchases';
+  restoreBtn.textContent = t('pw.restore');
   if (restored) {
     onPremiumChange(true);
     afterUnlock();
   } else {
-    restoreBtn.textContent = 'No purchases found';
-    setTimeout(() => { restoreBtn.textContent = 'Restore Purchases'; }, 2000);
+    restoreBtn.textContent = t('pw.noPurchases');
+    setTimeout(() => { restoreBtn.textContent = t('pw.restore'); }, 2000);
   }
 });
 
@@ -665,7 +671,7 @@ function renderCalendar() {
   const month = calViewDate.getMonth();
   const today = new Date();
 
-  calMonthLabel.textContent = `${MONTHS[month]} ${year}`;
+  calMonthLabel.textContent = formatMonthYear(year, month);
 
   const firstOfMonth = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -711,7 +717,7 @@ function selectArchiveDay(date) {
 
   const title = document.createElement('div');
   title.className = 'modal-price-line';
-  title.textContent = `${DAYS[date.getDay()]}, ${MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+  title.textContent = formatFullDate(date);
   archiveDayList.appendChild(title);
 
   entries.slice().reverse().forEach(entry => {
@@ -736,7 +742,7 @@ function refreshArchiveModalState() {
   if (isPremium) {
     calViewDate = new Date();
     selectedArchiveKey = null;
-    archiveDayList.innerHTML = `<p class="archive-empty">Tap a day with a dot to view its log.</p>`;
+    archiveDayList.innerHTML = `<p class="archive-empty">${t('history.hint')}</p>`;
     renderCalendar();
   }
 }

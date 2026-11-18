@@ -29,9 +29,15 @@ export async function launch() {
 /**
  * New phone-sized page at `url` with fresh storage set from `local` (localStorage, values are
  * strings or JSON-able) and `session` (sessionStorage), then reloaded so the app boots with it.
+ * `language` (e.g. 'ko-KR') stands in for the iPhone's preferred language.
  */
-export async function openPage(browser, url, { local = {}, session = {}, width = 393, height = 852 } = {}) {
+export async function openPage(browser, url, { local = {}, session = {}, width = 393, height = 852, language = null } = {}) {
   const page = await browser.newPage();
+  // Stand-in for the iPhone's preferred language (the app reads navigator.languages at startup)
+  if (language) await page.evaluateOnNewDocument(lang => {
+    Object.defineProperty(navigator, 'language', { get: () => lang });
+    Object.defineProperty(navigator, 'languages', { get: () => [lang] });
+  }, language);
   page.on('pageerror', e => console.log('  page error:', e.message));
   await page.setViewport({ width, height, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await page.goto(url);
