@@ -3,7 +3,7 @@ import { suite } from './helpers.mjs';
 // Reminder timing rules (pure functions, no browser)
 export default async function run(_browser, urls) {
   const t = suite('Reminder schedule rules');
-  const { buildSchedule, resumedRandomTimes, randomTimesFor } = await import(urls.remindersModule);
+  const { buildSchedule, resumedRandomTimes, randomTimesFor, buildRecap } = await import(urls.remindersModule);
 
   const now = new Date(2026, 10, 17, 15, 30);
   const at = (h, m) => new Date(2026, 10, 17, h, m).getTime();
@@ -35,5 +35,13 @@ export default async function run(_browser, urls) {
   t.check('Resume 19:05: less than an hour left, nothing until tomorrow', resume(19, 5).length === 0);
   t.check('Resume 21:00: nothing until tomorrow', resume(21, 0).length === 0);
   t.check('same Resume moment gives the same times', resume(15, 45).join() === afternoon.join());
+
+  // Evening recap at 20:30: only with entries, not on a "Not today" day, not once it's past
+  const recap = buildRecap({ now, count: 4 });
+  t.check('recap: today at 20:30 with the count', recap && recap.at === at(20, 30) && recap.body === '4 things logged today. That was a real day.', JSON.stringify(recap));
+  t.check('recap: 1 entry reads "1 thing … That counts."', buildRecap({ now, count: 1 }).body === '1 thing logged today. That counts.');
+  t.check('recap: none without entries', buildRecap({ now, count: 0 }) === null);
+  t.check('recap: none on a "Not today" day', buildRecap({ now, count: 3, paused: true }) === null);
+  t.check('recap: none after 20:30', buildRecap({ now: new Date(2026, 10, 17, 20, 31), count: 3 }) === null);
   return t.failures;
 }

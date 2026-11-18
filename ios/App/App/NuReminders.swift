@@ -115,6 +115,9 @@ final class NuReminders: NSObject, UNUserNotificationCenterDelegate {
     static let categoryId = "nu.checkin"
     static let reminderPrefix = "nu.reminder."
     static let snoozePrefix = "nu.snooze."
+    static let recapPrefix = "nu.recap."
+    /// Evening recap settings from the web app: { time: "HH:MM", bodies: [text for 1 entry, 2 entries, …] }
+    static let recapConfigKey = "nu.recap.config"
     static let skipDayKey = "nu.reminders.skipDay"
 
     private static let logAction = "nu.log"
@@ -166,13 +169,16 @@ final class NuReminders: NSObject, UNUserNotificationCenterDelegate {
             guard !text.isEmpty else { completionHandler(); return }
             // Saved to disk before anything else happens.
             PendingEntryStore.shared.append(text: text, at: Date())
-            removeReminders(firingBefore: Date().addingTimeInterval(skipWindow), completion: completionHandler)
+            bumpRecap {
+                self.removeReminders(firingBefore: Date().addingTimeInterval(self.skipWindow), completion: completionHandler)
+            }
 
         case Self.laterAction:
             scheduleSnooze(body: response.notification.request.content.body, completion: completionHandler)
 
         case Self.skipAction:
             UserDefaults.standard.set(Self.dayString(Date()), forKey: Self.skipDayKey)
+            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [Self.recapId(for: Date())])
             let endOfToday = Calendar.current.startOfDay(for: Date()).addingTimeInterval(24 * 60 * 60)
             removeReminders(firingBefore: endOfToday, completion: completionHandler)
 
@@ -183,12 +189,21 @@ final class NuReminders: NSObject, UNUserNotificationCenterDelegate {
 
     // MARK: Scheduling
 
-    /// Replaces all scheduled check-ins with `reminders` (fire date in ms, message body).
-    func schedule(_ reminders: [(at: Double, body: String)], completion: @escaping (Int) -> Void) {
+    /// Replaces all scheduled check-ins with `reminders` (fire date in ms, message body), and the
+    /// evening recap with `recap` (today's, if there is one). `recapConfig` lets a reply typed into a
+    /// notification update the recap's count later without the web app.
+    func schedule(_ reminders: [(at: Double, body: String)], recap: (at: Double, count: Int, body: String)?,
+                  recapConfig: [String: Any]?, completion: @escaping (Int) -> Void) {
         let center = UNUserNotificationCenter.current()
+        if let recapConfig = recapConfig {
+            UserDefaults.standard.set(recapConfig, forKey: Self.recapConfigKey)
+        }
         center.getPendingNotificationRequests { requests in
-            let old = requests.map(\.identifier).filter { $0.hasPrefix(Self.reminderPrefix) }
+            let old = requests.map(\.identifier).filter { $0.hasPrefix(Self.reminderPrefix) || $0.hasPrefix(Self.recapPrefix) }
             center.removePendingNotificationRequests(withIdentifiers: old)
+            if let recap = recap {
+                Self.addRecap(at: Date(timeIntervalSince1970: recap.at / 1000), count: recap.count, body: recap.body)
+            }
 
             let group = DispatchGroup()
             let lock = NSLock()
@@ -217,8 +232,11 @@ final class NuReminders: NSObject, UNUserNotificationCenterDelegate {
     func cancelAll(completion: @escaping () -> Void) {
         let center = UNUserNotificationCenter.current()
         center.getPendingNotificationRequests { requests in
-            let ids = requests.map(\.identifier).filter { $0.hasPrefix(Self.reminderPrefix) || $0.hasPrefix(Self.snoozePrefix) }
+            let ids = requests.map(\.identifier).filter {
+                $0.hasPrefix(Self.reminderPrefix) || $0.hasPrefix(Self.snoozePrefix) || $0.hasPrefix(Self.recapPrefix)
+            }
             center.removePendingNotificationRequests(withIdentifiers: ids)
+            UserDefaults.standard.removeObject(forKey: Self.recapConfigKey) // reminders off: no recap from replies either
             DispatchQueue.main.async(execute: completion)
         }
     }
@@ -242,6 +260,43 @@ final class NuReminders: NSObject, UNUserNotificationCenterDelegate {
             }.map(\.identifier)
             center.removePendingNotificationRequests(withIdentifiers: ids)
             completion()
+        }
+    }
+
+    // MARK: Evening recap
+
+    static func recapId(for date: Date) -> String { "\(recapPrefix)\(dayString(date))" }
+
+    /// Plain notification (no Log it / snooze actions): "4 things logged today. That was a real day."
+    private static func addRecap(at date: Date, count: Int, body: String) {
+        let content = UNMutableNotificationContent()
+        content.body = body
+        content.sound = .default
+        content.userInfo = ["recapCount": count]
+        let parts = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+        let request = UNNotificationRequest(identifier: recapId(for: date), content: content,
+                                            trigger: UNCalendarNotificationTrigger(dateMatching: parts, repeats: false))
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error { NSLog("nu: could not schedule recap: \(error)") }
+        }
+    }
+
+    /// A reply was just saved: today's recap counts one more (or starts at 1). Skipped when reminders
+    /// are off, on a "Not today" day, or after the recap time. Never touches the saved reply.
+    private func bumpRecap(then next: @escaping () -> Void) {
+        let now = Date()
+        guard let config = UserDefaults.standard.dictionary(forKey: Self.recapConfigKey),
+              let time = config["time"] as? String, let bodies = config["bodies"] as? [String], !bodies.isEmpty,
+              UserDefaults.standard.string(forKey: Self.skipDayKey) != Self.dayString(now) else { next(); return }
+        let hm = time.split(separator: ":").compactMap { Int($0) }
+        guard hm.count == 2, let at = Calendar.current.date(bySettingHour: hm[0], minute: hm[1], second: 0, of: now), at > now
+        else { next(); return }
+        let center = UNUserNotificationCenter.current()
+        center.getPendingNotificationRequests { requests in
+            let current = requests.first { $0.identifier == Self.recapId(for: now) }
+            let count = ((current?.content.userInfo["recapCount"] as? Int) ?? 0) + 1
+            Self.addRecap(at: at, count: count, body: bodies[min(count, bodies.count) - 1])
+            next()
         }
     }
 
@@ -301,7 +356,16 @@ public class NuRemindersPlugin: CAPPlugin, CAPBridgedPlugin {
             guard let at = (item["at"] as? NSNumber)?.doubleValue, let body = item["body"] as? String else { return nil }
             return (at: at, body: body)
         }
-        NuReminders.shared.schedule(reminders) { count in call.resolve(["count": count]) }
+        var recap: (at: Double, count: Int, body: String)?
+        if let item = call.getObject("recap"), let at = (item["at"] as? NSNumber)?.doubleValue,
+           let count = (item["count"] as? NSNumber)?.intValue, let body = item["body"] as? String {
+            recap = (at: at, count: count, body: body)
+        }
+        var recapConfig: [String: Any]?
+        if let time = call.getString("recapTime"), let bodies = call.getArray("recapBodies", String.self) {
+            recapConfig = ["time": time, "bodies": bodies]
+        }
+        NuReminders.shared.schedule(reminders, recap: recap, recapConfig: recapConfig) { count in call.resolve(["count": count]) }
     }
 
     @objc func cancelAll(_ call: CAPPluginCall) {

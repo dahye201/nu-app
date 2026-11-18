@@ -22,6 +22,9 @@ const read = p => p.evaluate(() => ({
   swatch: document.querySelector('[data-swatch="paper"] .swatch-label').textContent,
   weekdays: [...document.querySelectorAll('#calWeekdays span')].map(s => s.textContent).join(''),
   bodies: (window.__scheduled || []).map(r => r.body),
+  recap: window.__recap ? window.__recap.body : null,
+  recap5: (window.__recapBodies || [])[4] || null,
+  themesLine: document.getElementById('themesSubtitle').textContent,
 }));
 
 export default async function run(browser, urls) {
@@ -41,7 +44,9 @@ export default async function run(browser, urls) {
   t.check('🔔 screen title in Korean', s.rmTitle === '알림', s.rmTitle);
   t.check('random window line in Korean (24-hour device)', s.rmWhen === '하루 두 번, 10:00~20:00 사이에 와요.', s.rmWhen);
   t.check('next reminder line in Korean', /^다음 알림: (오늘|내일) \d/.test(s.rmNext), s.rmNext);
-  t.check('theme names in Korean', s.swatch === '페이퍼', s.swatch);
+  t.check('theme names stay in English', s.swatch === 'Paper', s.swatch);
+  t.check('themes popup line in Korean', s.themesLine === '오늘 기분에 맞는 색으로', s.themesLine);
+  t.check('recap texts in Korean (native bumps use these)', s.recap5 === '오늘 5개 기록했어요. 알찬 하루였어요.', s.recap5);
   t.check('calendar weekdays in Korean', s.weekdays === '일월화수목금토', s.weekdays);
   t.check('scheduled check-ins use the Korean pool', s.bodies.length > 0 && s.bodies.every(b => KO_LINES.includes(b)), s.bodies.join(' | '));
   // Every visible text node has Korean in it (times, emoji and the nu. logo aside)
@@ -51,7 +56,7 @@ export default async function run(browser, urls) {
     while (walk.nextNode()) {
       const n = walk.currentNode, text = n.textContent.trim();
       if (!text || !/[A-Za-z]{2,}/.test(text) || /[가-힣]/.test(text)) continue;
-      if (n.parentElement.closest('script,style,svg,.day-block,.pw-logo')) continue;
+      if (n.parentElement.closest('script,style,svg,.day-block,.paywall-title,.theme-swatch')) continue; // "nu. Premium" stays English
       out.push(text);
     }
     return out;
@@ -63,6 +68,7 @@ export default async function run(browser, urls) {
   const ko2 = await openPage(browser, urls.native, { language: 'ko', local: { ...local, [todayKey()]: [{ text: '메일 보냄', emoji: null, time: '09:00', id: Date.now() - 3600000 }] } });
   s = await read(ko2);
   t.check('copy button in Korean', s.copy === '오늘 기록 복사', s.copy);
+  if (new Date().getHours() * 60 + new Date().getMinutes() < 20 * 60 + 30) t.check('evening recap in Korean', s.recap === '오늘 1개 기록했어요. 그거면 충분해요.', s.recap);
   await ko2.close();
 
   t.section('English iPhone (and any other language)');

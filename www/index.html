@@ -1023,6 +1023,9 @@
       margin-bottom: 8px;
     }
 
+    /* Themes popup: a little more room between the swatches and Close */
+    #premiumUnlocked .modal-actions { margin-top: 14px; }
+
     .theme-swatch {
       border: 2px solid var(--separator);
       border-radius: 12px;
@@ -1279,8 +1282,8 @@
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      margin: 24px 0 32px;       /* subtitle → benefits, benefits → button */
+      gap: 7px;
+      margin: 20px 0 24px;       /* subtitle → benefits, benefits → button */
     }
     .pw-benefits li {
       display: flex;
@@ -1611,7 +1614,8 @@
           <p class="rm-next" id="remindNext" hidden></p>
           <p id="remindHintWhen"></p>
           <p id="remindHintSkip" data-i18n="rm.skip">Skipped if you logged in the last hour.</p>
-          <p data-i18n="rm.reply">Reply right from the notification.</p>
+          <p data-i18n="rm.reply">Long-press the notification to log right from it.</p>
+          <p id="remindHintRecap"></p>
         </div>
       </div>
       <div class="modal-actions">

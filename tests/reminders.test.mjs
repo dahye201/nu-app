@@ -11,6 +11,7 @@ const state = p => p.evaluate(() => {
     lines: [...document.querySelectorAll('#remindHint p')].filter(x => !x.hidden).map(x => x.textContent),
     today: (window.__scheduled || []).filter(r => new Date(r.at).getDate() === d).length,
     calls: window.__calls.join(),
+    recap: window.__recap,
     pill: getComputedStyle(document.querySelector('[data-mode="custom"] .rm-tag')).display !== 'none',
   };
 });
@@ -52,6 +53,20 @@ export default async function run(browser, urls) {
   s = await state(p);
   t.check('custom: no skip rule line', !s.lines.some(l => l.startsWith('Skipped')), JSON.stringify(s.lines));
   if (!late) t.check('custom: fires even 5 minutes after an entry', s.next === 'Next reminder: Today at 23:50', s.next);
+  await p.close();
+
+  t.section('Evening recap');
+  const beforeRecap = new Date().getHours() * 60 + new Date().getMinutes() < 20 * 60 + 30;
+  p = await settingsPage(browser, urls.native, { mode: 'random', entryMinutesAgo: 5 });
+  s = await state(p);
+  t.check('recap line shown in the 🔔 screen', s.lines.includes('On days you log, a short recap at 20:30.'), JSON.stringify(s.lines));
+  if (beforeRecap) t.check('recap scheduled for 20:30 with today\'s count', s.recap && s.recap.count === 1 && new Date(s.recap.at).getHours() === 20 && s.recap.body === '1 thing logged today. That counts.', JSON.stringify(s.recap));
+  await p.close();
+  p = await settingsPage(browser, urls.native, { mode: 'random' });
+  t.check('no entries today: no recap', (await state(p)).recap === null);
+  await p.close();
+  p = await settingsPage(browser, urls.native, { mode: 'random', paused: true, entryMinutesAgo: 5 });
+  t.check('"Not today": no recap', (await state(p)).recap === null);
   await p.close();
 
   t.section('Paused for today · Resume');

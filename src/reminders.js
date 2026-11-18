@@ -25,6 +25,10 @@ const SEED_KEY = 'nu_reminders_seed';
 const RESUME_KEY = 'nu_reminders_resumed';   // { day: "YYYY-MM-DD", at: ms }
 const RESUME_MIN_WINDOW = 60;                // minutes
 const RESUME_LEAD = 15;                      // minutes: no check-in right on top of tapping Resume
+// Evening recap ("4 things logged today…"): on days with at least one entry, while reminders are on.
+// Not on a "Not today" day. A reply typed into a notification bumps the count natively.
+export const RECAP_TIME = '20:30';
+const RECAP_MAX = 99;                        // texts handed to the native side, for 1…99 entries
 
 // Check-in lines (notification body only), picked by the local time the reminder fires.
 // Same pool for random (free) and custom (Premium) times. One pool per language, picked by the
@@ -254,6 +258,15 @@ export function buildSchedule({ now, times = [], timesFor = () => times, lastEnt
   return out;
 }
 
+/** Today's evening recap as { at, count, body }, or null (no entries, paused, or already past). */
+export function buildRecap({ now, count, paused = false }) {
+  if (!count || paused) return null;
+  const [h, m] = RECAP_TIME.split(':').map(Number);
+  const at = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m).getTime();
+  if (at <= now.getTime()) return null;
+  return { at, count, body: t('recap.body', count) };
+}
+
 // What was scheduled, so lines that have already gone out count as "recent" next time
 const SENT_KEY = 'nu_reminders_sent';
 
@@ -320,7 +333,9 @@ async function reschedule() {
   const now = new Date();
   const sent = loadSent(now.getTime());
   const reminders = buildSchedule({ now, timesFor, lastEntryAt: custom ? 0 : lastEntryAt, skipDay, sent, seed });
-  await NuReminders.schedule({ reminders });
+  const recap = buildRecap({ now, count: today.length, paused: skipDay === dayString(now) });
+  const recapBodies = Array.from({ length: RECAP_MAX }, (_, i) => t('recap.body', i + 1));
+  await NuReminders.schedule({ reminders, recap, recapTime: RECAP_TIME, recapBodies });
   saveScheduled(sent, reminders);
 }
 
@@ -504,6 +519,7 @@ async function renderSettings() {
   $('remindHintWhen').hidden = custom;
   $('remindHintWhen').textContent = t('rm.window', formatTime(toHHMM(RANDOM_START)), formatTime(toHHMM(RANDOM_END)));
   $('remindHintSkip').hidden = custom; // picked times always fire
+  $('remindHintRecap').textContent = t('rm.recap', formatTime(RECAP_TIME));
   refreshBell();
   refreshNext();
 }
