@@ -3,6 +3,17 @@ src/config.js
 .env
 .env.*
 
+# Certificates / signing keys / keystores
+*.p8
+*.p12
+*.pem
+*.key
+*.cer
+*.certSigningRequest
+*.mobileprovision
+*.keystore
+*.jks
+
 # Logs
 logs
 *.log
