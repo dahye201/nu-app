@@ -1,0 +1,41 @@
+/* Home screen widget (NuWidget). "\n" is where the question breaks onto a new line. */
+
+/* Widget gallery: name and description */
+"widget.name" = "nu.";
+"widget.description" = "A quick question about right now. Tap to write one line.";
+
+/* Question: logged today, less than 30 minutes ago */
+"widget.q.justLogged.1" = "What's next?\nJust one thing.";
+"widget.q.justLogged.2" = "Nice.\nWhat's the next one?";
+"widget.q.justLogged.3" = "One done.\nWhat now?";
+"widget.q.justLogged.4" = "Next tiny step?";
+
+/* Question: logged today, 30 minutes ago or more */
+"widget.q.timePassed.1" = "What are you\ndoing right now?";
+"widget.q.timePassed.2" = "What's in your\nhands right now?";
+"widget.q.timePassed.3" = "What did you\njust do?";
+"widget.q.timePassed.4" = "Where are you\nat right now?";
+
+/* Question: nothing today (last entry yesterday, or none yet) */
+"widget.q.noneToday.1" = "First tiny step\ntoday?";
+"widget.q.noneToday.2" = "What's first\ntoday?";
+"widget.q.noneToday.3" = "What are you\nup to now?";
+"widget.q.noneToday.4" = "Today's first line?";
+
+/* Question: last entry two or more days ago */
+"widget.q.back.1" = "Welcome back.\nWhat's now?";
+"widget.q.back.2" = "Hey, you're back.\nWhat's now?";
+"widget.q.back.3" = "Good to see you.\nWhat's up now?";
+"widget.q.back.4" = "Start from now.\nWhat are you doing?";
+
+/* Bottom: label above the time since the last entry (entry today) */
+"widget.lastLog" = "Last log";
+
+/* Bottom: no entry today */
+"widget.tapToWrite" = "Tap to write one line";
+
+/* Time since the last entry */
+"widget.ago.justNow" = "just now";
+"widget.ago.minutes" = "%d min ago";
+"widget.ago.hours" = "%dh ago";
+"widget.ago.hoursMinutes" = "%1$dh %2$dm ago";

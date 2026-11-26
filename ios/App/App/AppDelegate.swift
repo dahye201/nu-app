@@ -13,6 +13,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return true
     }
 
+    /// The web view's bridge (nil until the root view controller has loaded it).
+    private var bridge: CAPBridgeProtocol? {
+        (window?.rootViewController as? CAPBridgeViewController)?.bridge
+    }
+
     func applicationWillResignActive(_ application: UIApplication) {
         // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
         // Use this method to pause ongoing tasks, disable timers, and invalidate graphics rendering callbacks. Games should use this method to pause the game.
@@ -29,6 +34,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationDidBecomeActive(_ application: UIApplication) {
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+        NuWriteRequest.shared.appDidBecomeActive(bridge: bridge)
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
@@ -36,6 +42,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+        // nu://write from the home screen widget: straight to the input, keyboard up
+        if NuWriteRequest.shared.handle(url, bridge: bridge) { return true }
         // Called when the app was launched with a url. Feel free to add additional processing here,
         // but if you want the App API to support tracking app url opens, make sure to keep this call
         return ApplicationDelegateProxy.shared.application(app, open: url, options: options)

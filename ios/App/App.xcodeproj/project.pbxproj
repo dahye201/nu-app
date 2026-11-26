@@ -18,7 +18,38 @@
 		C5C30FB64F644A20A273E887 /* NuReminders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC6004F9C5044BBA6ED0E18 /* NuReminders.swift */; };
 		89930C39368B443394C31CCA /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000583873AE7476B81155DF9 /* MainViewController.swift */; };
 		A1B2C3D4E5F6071829304150 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6071829304151 /* Localizable.strings */; };
+		B10C0DE0000000000000000C /* NuWidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10C0DE00000000000000001 /* NuWidgetShared.swift */; };
+		B10C0DE0000000000000000D /* NuWidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10C0DE00000000000000001 /* NuWidgetShared.swift */; };
+		B10C0DE0000000000000000E /* NuWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10C0DE00000000000000002 /* NuWidget.swift */; };
+		B10C0DE0000000000000000F /* NuWidgetLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10C0DE00000000000000003 /* NuWidgetLogic.swift */; };
+		B10C0DE00000000000000010 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = B10C0DE00000000000000008 /* Localizable.strings */; };
+		B10C0DE00000000000000011 /* NuWidgetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10C0DE0000000000000000A /* NuWidgetBridge.swift */; };
+		B10C0DE00000000000000012 /* NuWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B10C0DE0000000000000000B /* NuWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B10C0DE00000000000000019 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 504EC2FC1FED79650016851F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B10C0DE0000000000000001B;
+			remoteInfo = NuWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B10C0DE00000000000000018 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B10C0DE00000000000000012 /* NuWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
@@ -35,6 +66,16 @@
 		000583873AE7476B81155DF9 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6071829304152 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F6071829304153 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B10C0DE00000000000000001 /* NuWidgetShared.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NuWidgetShared.swift; sourceTree = "<group>"; };
+		B10C0DE00000000000000002 /* NuWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NuWidget.swift; sourceTree = "<group>"; };
+		B10C0DE00000000000000003 /* NuWidgetLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NuWidgetLogic.swift; sourceTree = "<group>"; };
+		B10C0DE00000000000000004 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B10C0DE00000000000000005 /* NuWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NuWidget.entitlements; sourceTree = "<group>"; };
+		B10C0DE00000000000000006 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B10C0DE00000000000000007 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B10C0DE00000000000000009 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
+		B10C0DE0000000000000000A /* NuWidgetBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NuWidgetBridge.swift; sourceTree = "<group>"; };
+		B10C0DE0000000000000000B /* NuWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NuWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -46,6 +87,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B10C0DE00000000000000016 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -54,6 +102,8 @@
 			children = (
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				504EC3061FED79650016851F /* App */,
+				B10C0DE00000000000000013 /* Shared */,
+				B10C0DE00000000000000014 /* NuWidget */,
 				504EC3051FED79650016851F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -62,6 +112,7 @@
 			isa = PBXGroup;
 			children = (
 				504EC3041FED79650016851F /* App.app */,
+				B10C0DE0000000000000000B /* NuWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -73,6 +124,8 @@
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				7AC6004F9C5044BBA6ED0E18 /* NuReminders.swift */,
 				000583873AE7476B81155DF9 /* MainViewController.swift */,
+				B10C0DE0000000000000000A /* NuWidgetBridge.swift */,
+				B10C0DE00000000000000009 /* App.entitlements */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -82,6 +135,26 @@
 				50B271D01FEDC1A000F3C39B /* public */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		B10C0DE00000000000000013 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				B10C0DE00000000000000001 /* NuWidgetShared.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		B10C0DE00000000000000014 /* NuWidget */ = {
+			isa = PBXGroup;
+			children = (
+				B10C0DE00000000000000002 /* NuWidget.swift */,
+				B10C0DE00000000000000003 /* NuWidgetLogic.swift */,
+				B10C0DE00000000000000008 /* Localizable.strings */,
+				B10C0DE00000000000000004 /* Info.plist */,
+				B10C0DE00000000000000005 /* NuWidget.entitlements */,
+			);
+			path = NuWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -94,10 +167,12 @@
 				504EC3001FED79650016851F /* Sources */,
 				504EC3011FED79650016851F /* Frameworks */,
 				504EC3021FED79650016851F /* Resources */,
+				B10C0DE00000000000000018 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				B10C0DE0000000000000001A /* PBXTargetDependency */,
 			);
 			name = App;
 			packageProductDependencies = (
@@ -106,6 +181,23 @@
 			productName = App;
 			productReference = 504EC3041FED79650016851F /* App.app */;
 			productType = "com.apple.product-type.application";
+		};
+		B10C0DE0000000000000001B /* NuWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B10C0DE0000000000000001C /* Build configuration list for PBXNativeTarget "NuWidget" */;
+			buildPhases = (
+				B10C0DE00000000000000015 /* Sources */,
+				B10C0DE00000000000000016 /* Frameworks */,
+				B10C0DE00000000000000017 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NuWidget;
+			productName = NuWidget;
+			productReference = B10C0DE0000000000000000B /* NuWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -119,6 +211,10 @@
 					504EC3031FED79650016851F = {
 						CreatedOnToolsVersion = 9.2;
 						LastSwiftMigration = 1100;
+						ProvisioningStyle = Automatic;
+					};
+					B10C0DE0000000000000001B = {
+						CreatedOnToolsVersion = 15.0;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -141,6 +237,7 @@
 			projectRoot = "";
 			targets = (
 				504EC3031FED79650016851F /* App */,
+				B10C0DE0000000000000001B /* NuWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -160,6 +257,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B10C0DE00000000000000017 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B10C0DE00000000000000010 /* Localizable.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -170,10 +275,30 @@
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				C5C30FB64F644A20A273E887 /* NuReminders.swift in Sources */,
 				89930C39368B443394C31CCA /* MainViewController.swift in Sources */,
+				B10C0DE00000000000000011 /* NuWidgetBridge.swift in Sources */,
+				B10C0DE0000000000000000C /* NuWidgetShared.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B10C0DE00000000000000015 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B10C0DE0000000000000000E /* NuWidget.swift in Sources */,
+				B10C0DE0000000000000000F /* NuWidgetLogic.swift in Sources */,
+				B10C0DE0000000000000000D /* NuWidgetShared.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B10C0DE0000000000000001A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B10C0DE0000000000000001B /* NuWidget */;
+			targetProxy = B10C0DE00000000000000019 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		504EC30B1FED79650016851F /* Main.storyboard */ = {
@@ -197,6 +322,15 @@
 			children = (
 				A1B2C3D4E5F6071829304152 /* en */,
 				A1B2C3D4E5F6071829304153 /* ko */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+		B10C0DE00000000000000008 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				B10C0DE00000000000000006 /* en */,
+				B10C0DE00000000000000007 /* ko */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";
@@ -318,6 +452,7 @@
 			baseConfigurationReference = 958DCC722DB07C7200EA8C5F /* debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 82U2225ZL8;
@@ -341,6 +476,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 82U2225ZL8;
@@ -353,6 +489,58 @@
 				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dadahuis.nu;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		B10C0DE0000000000000001D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = NuWidget/NuWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_TEAM = 82U2225ZL8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NuWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dadahuis.nu.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B10C0DE0000000000000001E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = NuWidget/NuWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_TEAM = 82U2225ZL8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NuWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dadahuis.nu.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -376,6 +564,15 @@
 			buildConfigurations = (
 				504EC3171FED79650016851F /* Debug */,
 				504EC3181FED79650016851F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B10C0DE0000000000000001C /* Build configuration list for PBXNativeTarget "NuWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B10C0DE0000000000000001D /* Debug */,
+				B10C0DE0000000000000001E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

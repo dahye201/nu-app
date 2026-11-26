@@ -169,6 +169,7 @@ final class NuReminders: NSObject, UNUserNotificationCenterDelegate {
             guard !text.isEmpty else { completionHandler(); return }
             // Saved to disk before anything else happens.
             PendingEntryStore.shared.append(text: text, at: Date())
+            NuWidgetSync.noteReply(at: Date()) // home screen widget: "Last log · just now"
             bumpRecap {
                 self.removeReminders(firingBefore: Date().addingTimeInterval(self.skipWindow), completion: completionHandler)
             }

@@ -4,6 +4,9 @@
 //   localStorage  __mockPermission = 'denied' | …  → iOS notification permission (default 'granted')
 //   sessionStorage __journal                       → the native journal file (survives reloads,
 //                                                     and localStorage.clear(), like the real file)
+//   sessionStorage __widgetWrite = '1'             → the app was opened from the widget (taken once);
+//                                                     window.__openFromWidget() does the same while running
+// The widget's latest entry time is recorded in window.__widgetAt (one entry per send in __widgetSends).
 // Calls are recorded in window.__calls; scheduled reminders in window.__scheduled.
 const pad = n => String(n).padStart(2, '0');
 const d = new Date();
@@ -30,10 +33,23 @@ const journal = {
   load: async () => { await new Promise(r => setTimeout(r, 50)); return { data: sessionStorage.getItem('__journal') }; },
 };
 
+window.__widgetSends = [];
+const widget = {
+  setLastEntry: async ({ at }) => { window.__widgetAt = at; window.__widgetSends.push(at); return {}; },
+  takeWriteRequest: async () => {
+    const write = sessionStorage.getItem('__widgetWrite') === '1';
+    sessionStorage.removeItem('__widgetWrite');
+    return { write };
+  },
+};
+// Like AppDelegate on nu://write while the app is running: request kept, then the window event
+window.__openFromWidget = () => { sessionStorage.setItem('__widgetWrite', '1'); window.dispatchEvent(new Event('nuWrite')); };
+
 export const Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', isPluginAvailable: () => true };
 export function registerPlugin(name) {
   if (name === 'NuReminders') return reminders;
   if (name === 'NuJournal') return journal;
+  if (name === 'NuWidget') return widget;
   return new Proxy({}, { get: () => async () => ({}) });
 }
 export class WebPlugin {}

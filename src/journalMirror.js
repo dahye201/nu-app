@@ -9,6 +9,7 @@
 // - Nothing is written until that launch check is done, so an emptied localStorage can never
 //   overwrite the good copy.
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { syncWidget } from './widget.js';
 
 const NuJournal = registerPlugin('NuJournal');
 const native = Capacitor.isNativePlatform();
@@ -66,11 +67,13 @@ async function writeNow() {
   clearTimeout(timer);
   timer = null;
   if (!native || !ready) return;
+  const copy = snapshot();
   try {
-    await NuJournal.save({ data: JSON.stringify(snapshot()) });
+    await NuJournal.save({ data: JSON.stringify(copy) });
   } catch (err) {
     console.error('journal copy:', err);
   }
+  await syncWidget(copy.days); // home screen widget: time of the latest entry
 }
 
 /** Call after entries change. Batched, so a burst of changes is one write. */

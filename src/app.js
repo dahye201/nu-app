@@ -10,6 +10,7 @@ import {
 import { restoreJournalIfEmpty, noteJournalChanged } from './journalMirror.js';
 import { initReminders, adoptRestoredReminders, afterEntryAdded, refreshReminderPremium, openCustomReminderTimes, syncReminders } from './reminders.js';
 import { initBackup } from './backup.js';
+import { initWidgetLaunch } from './widget.js';
 import { initEntryActions, buildEntryRow, commitEdit, isEditing } from './entryActions.js';
 import { t, translatePage, formatMonthDay, formatFullDate, formatMonthYear } from './i18n.js';
 
@@ -856,5 +857,19 @@ restoreJournalIfEmpty({
     }
     if (settings.includes('nu_reminders')) await adoptRestoredReminders();
     else if (entries) syncReminders();
+  },
+});
+
+// Opened from the home screen widget: straight to writing, keyboard up.
+// Whatever was open is put away first (an entry being edited is saved, popups close).
+initWidgetLaunch({
+  onWrite() {
+    if (isEditing()) commitEdit();
+    closePanel();
+    document.querySelectorAll('.modal-overlay.visible').forEach(el => el.classList.remove('visible'));
+    syncBodyScrollLock();
+    window.scrollTo(0, 0);
+    input.blur(); // focusing an already-focused field would not bring the keyboard back
+    input.focus();
   },
 });

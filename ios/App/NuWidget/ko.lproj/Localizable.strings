@@ -1,0 +1,41 @@
+/* Home screen widget (NuWidget). "\n" is where the question breaks onto a new line. */
+
+/* Widget gallery: name and description */
+"widget.name" = "nu.";
+"widget.description" = "지금 뭐 하는지 물어봐요. 탭하면 바로 한 줄 쓸 수 있어요.";
+
+/* Question: logged today, less than 30 minutes ago */
+"widget.q.justLogged.1" = "다음은 뭐예요?\n하나만요.";
+"widget.q.justLogged.2" = "좋아요.\n다음 한 가지는요?";
+"widget.q.justLogged.3" = "하나 끝.\n이제 뭐 할까요?";
+"widget.q.justLogged.4" = "다음 한 걸음은\n뭐예요?";
+
+/* Question: logged today, 30 minutes ago or more */
+"widget.q.timePassed.1" = "지금 뭐 하고\n있어요?";
+"widget.q.timePassed.2" = "지금 손에 든 건\n뭐예요?";
+"widget.q.timePassed.3" = "방금 뭐 했어요?";
+"widget.q.timePassed.4" = "지금 어디쯤이에요?";
+
+/* Question: nothing today (last entry yesterday, or none yet) */
+"widget.q.noneToday.1" = "오늘 첫 걸음은\n뭐예요?";
+"widget.q.noneToday.2" = "오늘 뭐부터\n해볼까요?";
+"widget.q.noneToday.3" = "지금 뭐 하고\n있어요?";
+"widget.q.noneToday.4" = "오늘 첫 줄,\n뭐라고 쓸까요?";
+
+/* Question: last entry two or more days ago */
+"widget.q.back.1" = "다시 왔네요.\n지금 뭐 해요?";
+"widget.q.back.2" = "반가워요.\n지금은 뭐 해요?";
+"widget.q.back.3" = "어서 와요.\n지금부터 한 줄.";
+"widget.q.back.4" = "지금부터 다시.\n뭐 하고 있어요?";
+
+/* Bottom: label above the time since the last entry (entry today) */
+"widget.lastLog" = "마지막 기록";
+
+/* Bottom: no entry today */
+"widget.tapToWrite" = "탭해서 한 줄 쓰기";
+
+/* Time since the last entry */
+"widget.ago.justNow" = "방금";
+"widget.ago.minutes" = "%d분 전";
+"widget.ago.hours" = "%d시간 전";
+"widget.ago.hoursMinutes" = "%1$d시간 %2$d분 전";

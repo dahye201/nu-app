@@ -34,7 +34,7 @@ const urls = {
   remindersModule: pathToFileURL(path.join(out, 'reminders.node.mjs')).href,
 };
 
-const suites = ['schedule', 'entries', 'reminders', 'journal', 'language'];
+const suites = ['schedule', 'entries', 'reminders', 'journal', 'language', 'widget'];
 const only = process.argv.slice(2);
 const browser = await launch();
 let failures = 0;
